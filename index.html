@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -955,7 +955,7 @@
             }
         };
 
-        let currentLang = 'en'; // Default Language
+        let currentLang = 'ja'; // Default Language
 
         function t(key) {
             return TRANSLATIONS[currentLang][key] || key;
@@ -2399,6 +2399,7 @@
         }
 
         // --- Init ---
+        updateAllTexts(); // Apply translations immediately
         setTimeout(fitCanvasToScreen, 100);
         
         // --- Mode Init ---
