@@ -853,7 +853,7 @@
                 styleAnime: "Anime Style",
                 styleWater: "Watercolor",
                 styleOil: "Oil Painting",
-                style3d: "3D CG",
+                style3d: "3D Render",
                 stylePixel: "Pixel Art",
                 styleCyber: "Cyberpunk",
                 generate: "Generate",
@@ -2132,11 +2132,20 @@
              btn.disabled = true; 
              resultBox.style.display = 'none';
 
+             // Language specific instruction
+             const langInstruction = currentLang === 'ja' ? 'in Japanese' : 'in English';
+
              try {
                 const response = await fetch('https://text.pollinations.ai/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: [{ role: 'user', content: `Extract a short catchphrase (max 20 chars) and a detailed English image prompt from this text. Return JSON: {"catchphrase":"...","imagePrompt":"..."}\n\n${draft}` }], model: 'openai' })
+                    body: JSON.stringify({ 
+                        messages: [{ 
+                            role: 'user', 
+                            content: `Extract a short catchphrase (max 20 chars, ${langInstruction}) and a detailed English image prompt from this text. Return JSON: {"catchphrase":"...","imagePrompt":"..."}\n\n${draft}` 
+                        }], 
+                        model: 'openai' 
+                    })
                 });
                 const text = await response.text();
                 
