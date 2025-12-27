@@ -1,0 +1,2425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UniMaker - Bilingual</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Kaisei+Opti&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Potta+One&family=Yusei+Magic&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #41b883;
+            --secondary: #2c3e50;
+            --danger: #ff4d4f;
+            --dark: #333;
+            --bg: #f5f5f5;
+            --accent: #d35400;
+            --ai: #6a11cb;
+            --trans: #2980b9;
+            --menu-bg: #ffffff;
+            --menu-text: #444;
+            --header-height: 50px;
+        }
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            overscroll-behavior: none;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* --- Level 1: Global Header --- */
+        header {
+            background: white;
+            padding: 8px 10px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            z-index: 600;
+            flex-shrink: 0;
+            gap: 12px;
+            height: var(--header-height);
+            border-bottom: 1px solid #eee;
+        }
+
+        .mode-switch {
+            display: flex;
+            background: #eee;
+            border-radius: 20px;
+            padding: 2px;
+            flex-shrink: 0;
+        }
+        .mode-btn {
+            border: none;
+            background: transparent;
+            padding: 4px 10px;
+            border-radius: 18px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .static-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            flex-grow: 1;
+            scrollbar-width: none;
+        }
+        .static-controls::-webkit-scrollbar { display: none; }
+
+        .size-select, .format-select {
+            font-size: 11px;
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+            color: var(--dark);
+        }
+
+        .save-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .lang-btn {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            margin-left: auto; /* Push to right */
+            font-weight: bold;
+        }
+
+        /* --- Level 2 & 3: Top Menu Container (Ribbon Style) --- */
+        #top-menu-container {
+            background: var(--menu-bg);
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            z-index: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        /* Level 2: Main Tools (Tabs) */
+        .main-menu-row {
+            display: flex;
+            overflow-x: auto;
+            gap: 2px;
+            align-items: stretch;
+            padding: 0 5px;
+            border-bottom: 1px solid #eee;
+            scrollbar-width: none;
+            background: #fff;
+        }
+        .main-menu-row::-webkit-scrollbar { display: none; }
+        
+        .menu-item {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 10px;
+            min-width: 60px;
+            cursor: pointer;
+            color: var(--menu-text);
+            font-size: 10px;
+            font-weight: bold;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent; /* Active indicator */
+        }
+        
+        .menu-item:hover { background: #f5f5f5; }
+        .menu-item.active { 
+            color: var(--primary); 
+            border-bottom-color: var(--primary);
+            background: #f9fff9;
+        }
+        .menu-icon { font-size: 20px; margin-bottom: 4px; display:flex; align-items:center; justify-content:center; }
+        .menu-icon svg { width: 20px; height: 20px; }
+
+        /* Level 3: Sub Tools (Toolbar) */
+        .sub-menu-row {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 10px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            min-height: 46px; /* Ensure height even if empty */
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .sub-item {
+            flex: 0 0 auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.1s;
+        }
+        .sub-item:active { transform: translateY(1px); box-shadow: none; }
+        .sub-item:hover { background: #fff; border-color: #bbb; }
+        .sub-item.active { background: #e0f2f1; border-color: var(--primary); color: var(--primary); }
+        
+        .slider-wrapper-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+        }
+        .slider-wrapper-menu input[type=range] { width: 100px; }
+        .slider-label { font-size: 10px; font-weight: bold; color: #666; }
+        
+        .color-preview-mini {
+            width: 20px; 
+            height: 20px; 
+            border-radius: 50%; 
+            border: 1px solid #ccc;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #333;
+        }
+
+        /* Static Mode Area */
+        #static-area {
+            flex-grow: 1;
+            position: relative;
+            overflow: auto; 
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            background: #333;
+            scrollbar-width: thin; 
+            scrollbar-color: #555 #333; 
+        }
+        
+        #static-area::-webkit-scrollbar { width: 10px; height: 10px; }
+        #static-area::-webkit-scrollbar-track { background: #333; }
+        #static-area::-webkit-scrollbar-thumb {
+            background-color: #555; 
+            border-radius: 5px;
+            border: 2px solid #333;
+        }
+        #static-area::-webkit-scrollbar-corner { background-color: #333; }
+        
+        .canvas-scroll-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 100%;
+            min-height: 100%;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+        
+        /* Updated Canvas Wrapper with Transparency Grid */
+        .canvas-wrapper {
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            background-color: #fff;
+            background-image:
+                linear-gradient(45deg, #e0e0e0 25%, transparent 25%),
+                linear-gradient(-45deg, #e0e0e0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #e0e0e0 75%),
+                linear-gradient(-45deg, transparent 75%, #e0e0e0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            
+            touch-action: none; 
+            margin: auto;
+            flex-shrink: 0;
+        }
+        .canvas-container { margin: 0 !important; }
+
+        /* Magnifier (Loupe) */
+        #magnifier {
+            position: fixed;
+            width: 120px;
+            height: 120px;
+            border: 4px solid white;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 2000;
+            display: none;
+            pointer-events: none;
+            background: white;
+        }
+        #magnifier canvas { width: 100%; height: 100%; display: block; }
+
+        /* Pen Cursor */
+        #pen-cursor {
+            position: fixed;
+            pointer-events: none;
+            border-radius: 50%;
+            background: white;
+            mix-blend-mode: difference;
+            z-index: 2500;
+            display: none;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Brush Preview (Central) */
+        #brush-preview {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+            pointer-events: none;
+            display: none;
+            z-index: 3000;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        /* GIF Area */
+        #gif-area {
+            width: 100%; height: 100%; background: #222; display: none;
+            flex-direction: column; padding: 15px; overflow-y: auto; color: white;
+        }
+        
+        /* Crop Controls */
+        #crop-controls {
+            position: fixed; 
+            bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: none; gap: 15px; z-index: 1000;
+        }
+        .crop-action-btn {
+            padding: 12px 25px; border-radius: 30px; border: none; font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; color: white;
+        }
+        .crop-apply { background: var(--accent); } .crop-cancel { background: #7f8c8d; }
+
+        /* Hidden Inputs */
+        #imgLoader, #bgColorPicker, #textColorPicker, #strokeColorPicker, #penColorPicker { display: none; }
+
+        /* Modals */
+        .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
+        
+        /* Standard Modal Content */
+        .modal-content { background: white; width: 100%; max-width: 450px; border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto; }
+        
+        /* AI Specific Modal Overrides */
+        #aiModal .modal-content {
+            overflow: hidden; /* Prevent outer scroll */
+            padding: 0;
+            max-height: 85vh; /* Ensure it fits on screen */
+        }
+        
+        .modal-title { font-weight: bold; font-size: 16px; color: var(--dark); }
+        .btn-group { display: flex; gap: 10px; justify-content: flex-end; }
+        .btn-secondary { background: #f0f0f0; color: #333; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor: pointer; }
+        
+        /* Close Button (Top Right) */
+        .modal-close-icon {
+            font-size: 24px;
+            color: #888;
+            cursor: pointer;
+            line-height: 1;
+            padding: 5px 10px;
+            background: transparent;
+            border: none;
+            transition: color 0.2s;
+        }
+        .modal-close-icon:hover { color: #333; background: #f5f5f5; border-radius: 4px; }
+
+        .font-list { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+        .font-item { padding: 10px; border: 1px solid #eee; border-radius: 6px; font-size: 14px; cursor: pointer; text-align: center; background: #fafafa; }
+        .font-item:hover { background: #eee; }
+
+        /* AI Modal Styles */
+        .ai-tabs { display: flex; gap: 5px; padding: 10px 15px 0 15px; border-bottom: 1px solid #eee; }
+        .ai-tab { padding: 6px 12px; cursor: pointer; border-radius: 20px; font-size: 12px; font-weight: bold; color: #666; background: #f5f5f5; margin-bottom: 10px; }
+        .ai-tab.active { background: var(--ai); color: white; }
+        
+        .ai-scrollable-area {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ai-panel { display: none; flex-direction: column; gap: 10px; }
+        .ai-panel.active { display: flex; }
+        .ai-textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+        .ai-generate-btn { background: var(--ai); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .ai-generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .ai-description { font-size: 12px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 6px; border-left: 3px solid var(--ai); }
+
+        .ai-result-area {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.6;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+        }
+        .ai-suggestion-box {
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .ai-suggestion-title {
+            font-weight: bold;
+            color: #4338ca;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        .ai-action-btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 5px;
+            margin-right: 5px;
+        }
+        .ai-action-btn.secondary { background: #818cf8; }
+
+        .ai-image-preview {
+            width: 100%;
+            height: 200px;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        .ai-image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .ai-aspect-select {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .trans-section { border: 1px solid #eee; border-radius: 8px; padding: 10px; background: #f9f9f9; }
+        .trans-control-row { display: flex; align-items: center; gap: 10px; margin-bottom:5px;}
+        .trans-control-row label { font-size: 12px; color: #666; font-weight: bold; min-width: 50px; }
+        .trans-slider { flex-grow: 1; cursor: pointer; }
+
+        .save-option-btn {
+            width: 100%; padding: 12px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 8px; 
+            background: white; text-align: left; font-weight: bold; color: #444; cursor: pointer;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .save-option-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .save-desc { font-size: 11px; color: #888; font-weight: normal; }
+
+        /* GIF specific */
+        .gif-container-inner { max-width: 600px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .video-wrapper { width: 100%; background: #000; position: relative; display: flex; justify-content: center; border-radius: 8px; min-height: 200px; overflow: hidden; align-items: center;}
+        #sourceVideo { max-width: 100%; max-height: 40vh; }
+        .gif-controls { background: #333; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; color: #ddd;}
+        .timeline-container { flex-grow: 1; height: 30px; position: relative; margin: 0 10px; cursor: pointer; }
+        .timeline-track { position: absolute; top: 50%; left: 0; right: 0; height: 4px; background: #555; }
+        .timeline-fill { position: absolute; top: 50%; height: 4px; background: var(--primary); transform: translateY(-50%); }
+        .timeline-thumb { position: absolute; top: 50%; width: 16px; height: 16px; background: white; border-radius: 50%; transform: translate(-50%, -50%); cursor: grab; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .timeline-playhead { position: absolute; top: 50%; height: 16px; width: 2px; background: red; transform: translate(-50%, -50%); display: none; }
+        .btn-file-select { background: #555; padding: 8px 15px; border-radius: 4px; color: white; font-size: 12px; display: inline-block; cursor: pointer; border:none; text-align: center;}
+        .btn-file-select:hover { background: #666; }
+        .btn-gif-action { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; margin-top: 5px; }
+        .btn-gif-action:hover { opacity: 0.9; }
+        .btn-gif-action:disabled { background: #555; cursor: not-allowed; }
+        
+        .control-row { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+
+        .loading-bar { width: 100%; height: 6px; background: #444; border-radius: 3px; overflow: hidden; display: none; margin-top: 10px; }
+        .loading-progress { width: 0%; height: 100%; background: var(--primary); transition: width 0.2s; }
+        #result-area { background: #333; padding: 15px; border-radius: 8px; text-align: center; display: none; margin-top: 20px; border: 1px solid #444; }
+        #result-img { max-width: 100%; border: 1px solid #555; margin-bottom: 10px; border-radius: 4px; }
+        .download-link { color: var(--primary); text-decoration: none; font-weight: bold; border: 1px solid var(--primary); padding: 8px 16px; border-radius: 4px; display: inline-block; margin-top: 5px; }
+        .gif-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-weight: bold; font-size: 16px; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="mode-switch">
+            <button class="mode-btn active" id="btn-mode-static" onclick="setMode('static')" data-t="staticMode">Static</button>
+            <button class="mode-btn" id="btn-mode-gif" onclick="setMode('gif')" data-t="gifMode">GIF Maker</button>
+        </div>
+
+        <div class="static-controls" id="static-controls">
+            <select id="canvasSizeSelect" class="size-select" onchange="changeCanvasSize()">
+                <option value="header" data-t="sizeStandard">Standard (1280x670)</option>
+                <option value="article" data-t="sizeHalf">Half (1280x350)</option>
+                <option value="icon" selected data-t="sizeIcon">Icon (480x480)</option>
+                <option value="line_stamp" data-t="sizeStamp">Line Stamp (370x320)</option>
+            </select>
+            
+            <button class="save-btn" onclick="openSaveModal()">
+                <span data-t="saveImage">💾 Save Image</span>
+            </button>
+        </div>
+
+        <button class="lang-btn" onclick="toggleLanguage()">🌐 EN / JP</button>
+    </header>
+
+    <!-- NEW TOP MENU (Ribbon Style) -->
+    <div id="top-menu-container">
+        <!-- Main Tabs -->
+        <div class="main-menu-row" id="mainMenuRow"></div>
+        <!-- Sub Toolbar -->
+        <div class="sub-menu-row" id="subMenuRow" style="display: none;"></div>
+    </div>
+
+    <div class="main-content">
+        <div id="static-area">
+            <div class="canvas-scroll-content">
+                <div class="canvas-wrapper" id="canvas-wrapper">
+                    <canvas id="c"></canvas>
+                </div>
+            </div>
+            
+            <div id="crop-controls">
+                <button class="crop-action-btn crop-cancel" onclick="cancelCrop()" data-t="cancel">Cancel</button>
+                <button class="crop-action-btn crop-apply" onclick="performCrop()" data-t="crop">Crop</button>
+            </div>
+        </div>
+
+        <div id="gif-area">
+            <div class="gif-container-inner">
+                <div class="gif-header">
+                    <span data-t="gifTitle">🎬 GIF Maker</span>
+                    <label class="btn-file-select">
+                        <span data-t="selectVideo">📂 Select Video</span>
+                        <input type="file" id="videoLoader" accept="video/*" style="display:none;" onchange="loadVideo(this)">
+                    </label>
+                </div>
+                <div class="video-wrapper">
+                    <div style="color:#888; font-size:12px;" id="videoPlaceholder" data-t="videoPlaceholder">Please load a video file</div>
+                    <video id="sourceVideo" playsinline muted style="display:none;"></video>
+                </div>
+                
+                <div class="gif-controls" id="gifControls" style="display:none; opacity:0.5; pointer-events: none;">
+                    <div class="control-row">
+                        <label style="min-width:30px;" data-t="range">Range</label>
+                        <div class="timeline-container" id="timelineContainer">
+                            <div class="timeline-track"></div>
+                            <div class="timeline-fill" id="timelineFill" style="left:0%; width:100%;"></div>
+                            <div class="timeline-thumb" id="thumbStart" style="left:0%;"></div>
+                            <div class="timeline-thumb" id="thumbEnd" style="left:100%;"></div>
+                            <div class="timeline-playhead" id="timelinePlayhead" style="left:0%;"></div>
+                        </div>
+                    </div>
+                    <div class="control-row">
+                        <label data-t="time">Time</label>
+                        <span id="timeDisplay" style="min-width: 100px; font-variant-numeric: tabular-nums; font-size: 13px;">0.0s - 0.0s</span>
+                        <button class="btn-file-select" style="background:#444;" onclick="previewVideoSegment()"><span data-t="preview">▶ Preview</span></button>
+                    </div>
+                    <div class="control-row">
+                        <label data-t="settings">Config</label>
+                        <select id="gifAspectSelect" style="padding:6px; border-radius:4px; background:#fff; margin-right:5px;">
+                            <option value="original" data-t="aspectOriginal">Original</option>
+                            <option value="1:1" data-t="aspectSquare">Square (1:1)</option>
+                            <option value="16:9" data-t="aspectWide">Wide (16:9)</option>
+                        </select>
+                        <select id="fpsSelect" style="padding:6px; border-radius:4px; background:#fff;">
+                            <option value="5" data-t="fpsLow">5 fps (Light)</option>
+                            <option value="10" selected data-t="fpsStd">10 fps (Std)</option>
+                            <option value="15" data-t="fpsSmooth">15 fps (Smooth)</option>
+                            <option value="20" data-t="fpsHeavy">20 fps (Heavy)</option>
+                        </select>
+                         <span style="font-size:10px; color:#888;" data-t="browserProcess">※Browser Processing</span>
+                    </div>
+                    
+                    <button id="createGifBtn" class="btn-gif-action" onclick="createGif()" data-t="createGif">Create GIF</button>
+                    
+                    <div class="loading-bar" id="gifProgress"><div class="loading-progress"></div></div>
+                    <div id="gifStatus" style="text-align:center; font-size:12px; color:#aaa; margin-top:5px; display:none;" data-t="waiting">Waiting...</div>
+                </div>
+                
+                <div id="result-area">
+                    <p style="color:#fff; font-weight:bold; margin-bottom:10px;" data-t="done">✨ Done</p>
+                    <img id="result-img">
+                    <br>
+                    <a id="downloadGifLink" class="download-link" download="animation.gif" data-t="saveGif">Save Image</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Magnifier Element -->
+    <div id="magnifier"><canvas id="magnifierCanvas" width="120" height="120"></canvas></div>
+    
+    <!-- Pen Cursor Element -->
+    <div id="pen-cursor"></div>
+    <!-- Brush Preview Element -->
+    <div id="brush-preview"></div>
+
+    <!-- Hidden Inputs -->
+    <input type="file" id="imgLoader" multiple accept="image/*">
+    <input type="color" id="bgColorPicker" value="#ffffff">
+    <input type="color" id="textColorPicker" value="#000000">
+    <input type="color" id="strokeColorPicker" value="#000000">
+    <input type="color" id="penColorPicker" value="#000000">
+
+    <!-- Font Modal -->
+    <div id="fontModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title" data-t="fontTitle">Select Font</div>
+            <div class="font-list">
+                <div class="font-item" style="font-family: 'Noto Sans JP';" onclick="changeFont('Noto Sans JP')">Gothic (Sans)</div>
+                <div class="font-item" style="font-family: 'Noto Serif JP';" onclick="changeFont('Noto Serif JP')">Mincho (Serif)</div>
+                <div class="font-item" style="font-family: 'Potta One';" onclick="changeFont('Potta One')">Pop</div>
+                <div class="font-item" style="font-family: 'DotGothic16';" onclick="changeFont('DotGothic16')">Dot/Pixel</div>
+                <div class="font-item" style="font-family: 'Yusei Magic';" onclick="changeFont('Yusei Magic')">Handwritten</div>
+                <div class="font-item" style="font-family: 'Kaisei Opti';" onclick="changeFont('Kaisei Opti')">Modern Serif</div>
+            </div>
+            <div class="btn-group"><button class="btn-secondary" onclick="closeModal('fontModal')" data-t="close">Close</button></div>
+        </div>
+    </div>
+
+    <!-- Save Modal -->
+    <div id="saveModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title" data-t="saveTitle">💾 Save Image</div>
+            <p style="font-size:13px; color:#666; margin-bottom:15px;" data-t="saveDesc">Please select a format.</p>
+            
+            <button class="save-option-btn" onclick="executeSave('png')">
+                <span>PNG</span>
+                <span class="save-desc" data-t="pngDesc">High Quality, Transparent</span>
+            </button>
+            <button class="save-option-btn" onclick="executeSave('jpeg')">
+                <span>JPG</span>
+                <span class="save-desc" data-t="jpgDesc">Photo, Light, No Transparecy</span>
+            </button>
+            <button class="save-option-btn" onclick="executeSave('webp')">
+                <span>WEBP</span>
+                <span class="save-desc" data-t="webpDesc">Modern, Light</span>
+            </button>
+
+            <div class="btn-group" style="margin-top:10px;"><button class="btn-secondary" onclick="closeModal('saveModal')" data-t="cancel">Cancel</button></div>
+        </div>
+    </div>
+
+    <!-- AI Modal -->
+    <div id="aiModal" class="modal-overlay">
+        <div class="modal-content">
+            <!-- Fixed Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 15px 20px 10px 20px; border-bottom: 1px solid #f0f0f0;">
+                <div class="modal-title" data-t="aiTitle">✨ AI Tools</div>
+                <button class="modal-close-icon" onclick="closeModal('aiModal')">×</button>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="ai-tabs">
+                <div class="ai-tab active" onclick="switchAiTab('draft')" data-t="aiTabDraft">Draft to Design</div>
+                <div class="ai-tab" onclick="switchAiTab('image')" data-t="aiTabImage">Generate Image</div>
+            </div>
+            
+            <!-- Scrollable Body -->
+            <div class="ai-scrollable-area">
+                <!-- Draft Analysis Panel -->
+                <div id="ai-panel-draft" class="ai-panel active">
+                    <div class="ai-description" data-t="aiDraftDesc">
+                        Enter your article draft, and AI will suggest a catchphrase and an image prompt.
+                    </div>
+                    <textarea class="ai-textarea" id="aiDraftInput" placeholder="Enter draft text here..."></textarea>
+                    <div id="aiDraftResult" style="display:none; flex-direction:column; gap:10px;">
+                        <div class="ai-suggestion-box">
+                            <div class="ai-suggestion-title" data-t="catchphrase">💡 Catchphrase</div>
+                            <div id="aiDraftCatchphrase" style="font-size:14px; font-weight:bold; margin-bottom:5px;"></div>
+                            <div style="display:flex;">
+                                <button class="ai-action-btn" onclick="addTitleToCanvas(document.getElementById('aiDraftCatchphrase').innerText)" data-t="addAsText">Add as Text</button>
+                            </div>
+                        </div>
+                        <div class="ai-suggestion-box">
+                            <div class="ai-suggestion-title" data-t="imgPrompt">🖼️ Image Prompt</div>
+                            <div id="aiDraftImagePrompt" style="font-size:12px; color:#555; margin-bottom:5px;"></div>
+                            <div style="display:flex;">
+                                <button class="ai-action-btn" onclick="useDraftImagePrompt()" data-t="usePrompt">Use this Prompt</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="ai-generate-btn" id="btn-gen-draft" onclick="analyzeDraft()">
+                        <span id="aiDraftLoading" class="loader" style="display:none;"></span>
+                        <span data-t="analyze">Analyze Draft</span>
+                    </button>
+                </div>
+                
+                <!-- Image Generation Panel -->
+                <div id="ai-panel-image" class="ai-panel">
+                    <div class="ai-description" data-t="aiImgDesc">
+                        Describe the image you want. Japanese input is automatically translated.
+                    </div>
+                    <div style="display:flex; gap:5px;">
+                        <select id="aiImageAspect" class="ai-aspect-select" style="flex:1;">
+                            <option value="1:1" data-t="aspectSquare">Square (1:1)</option>
+                            <option value="16:9" data-t="aspectWide">Wide (16:9)</option>
+                            <option value="4:3">4:3</option>
+                            <option value="3:4">3:4</option>
+                            <option value="9:16">9:16</option>
+                        </select>
+                        <select id="aiImageStyle" class="ai-aspect-select" style="flex:1;">
+                            <option value="" data-t="styleNone">Style: None</option>
+                            <option value="photorealistic, 8k, highly detailed" data-t="stylePhoto">Photorealistic</option>
+                            <option value="flat illustration, vector art, minimalist" data-t="styleFlat">Flat Illustration</option>
+                            <option value="anime style, studio ghibli, vibrant" data-t="styleAnime">Anime Style</option>
+                            <option value="watercolor painting, soft colors, artistic" data-t="styleWater">Watercolor</option>
+                            <option value="oil painting, textured, impasto" data-t="styleOil">Oil Painting</option>
+                            <option value="3d render, unreal engine, c4d" data-t="style3d">3D Render</option>
+                            <option value="pixel art, 16-bit, retro" data-t="stylePixel">Pixel Art</option>
+                            <option value="cyberpunk, neon lights, futuristic" data-t="styleCyber">Cyberpunk</option>
+                        </select>
+                    </div>
+                    <textarea class="ai-textarea" id="aiImagePrompt" placeholder="e.g. A cafe by the sea, coffee"></textarea>
+                    <div class="ai-image-preview" id="aiImagePreview"><span data-t="preview">Preview</span></div>
+                    <button class="ai-generate-btn" id="btn-gen-image" onclick="generateAiImage()">
+                        <span id="aiImageLoading" class="loader" style="display:none;"></span>
+                        <span data-t="generate">Generate</span>
+                    </button>
+                    <button class="btn-secondary" id="btn-add-canvas" style="display:none; width:100%;" onclick="addGeneratedImageToCanvas()" data-t="addToCanvas">Add to Canvas</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trans Modal (Threshold Setting) -->
+    <div id="transModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title" data-t="transTitle">Magic Eraser Settings</div>
+             <div class="trans-section">
+                <div class="trans-control-row">
+                    <label data-t="threshold">Threshold:</label>
+                    <input type="range" class="trans-slider" id="chromaThreshold" min="0" max="1" step="0.01" value="0.1">
+                </div>
+                <p style="font-size:11px; color:#666;" data-t="transDesc">Adjusts how much similar color to remove.</p>
+            </div>
+            <div class="btn-group"><button class="btn-secondary" onclick="closeModal('transModal')" data-t="close">Close</button></div>
+        </div>
+    </div>
+
+    <script>
+        // --- Translations ---
+        const TRANSLATIONS = {
+            en: {
+                staticMode: "Static",
+                gifMode: "GIF Maker",
+                sizeStandard: "Standard (1280x670)",
+                sizeHalf: "Half (1280x350)",
+                sizeIcon: "Icon (480x480)",
+                sizeStamp: "Line Stamp (370x320)",
+                saveImage: "💾 Save Image",
+                select: "Select",
+                pen: "Pen",
+                shapes: "Shapes",
+                magic: "Magic",
+                ai: "AI Tools",
+                zoom: "Zoom",
+                bgColor: "Bg Color",
+                addText: "Add Text",
+                addImage: "Add Image",
+                undo: "Undo",
+                redo: "Redo",
+                color: "Color",
+                eraserTrans: "Eraser (Trans)",
+                width: "Width",
+                run: "Run",
+                settings: "Config",
+                zoomIn: "Zoom In",
+                zoomOut: "Zoom Out",
+                fit: "Fit",
+                fill: "Fill",
+                noFill: "No Fill",
+                stroke: "Stroke",
+                strokeWidth: "Width",
+                clone: "Clone",
+                front: "Front",
+                back: "Back",
+                delete: "Delete",
+                crop: "Crop",
+                cancel: "Cancel",
+                gifTitle: "🎬 GIF Maker",
+                selectVideo: "📂 Select Video",
+                videoPlaceholder: "Please load a video file",
+                range: "Range",
+                time: "Time",
+                preview: "▶ Preview",
+                aspectOriginal: "Original",
+                aspectSquare: "Square (1:1)",
+                aspectWide: "Wide (16:9)",
+                fpsLow: "5 fps (Light)",
+                fpsStd: "10 fps (Std)",
+                fpsSmooth: "15 fps (Smooth)",
+                fpsHeavy: "20 fps (Heavy)",
+                browserProcess: "※Browser Processing",
+                createGif: "Create GIF",
+                waiting: "Waiting...",
+                done: "✨ Done",
+                saveGif: "Save Image",
+                fontTitle: "Select Font",
+                close: "Close",
+                saveTitle: "💾 Save Image",
+                saveDesc: "Please select a format.",
+                pngDesc: "High Quality, Transparent",
+                jpgDesc: "Photo, Light, No Transparecy",
+                webpDesc: "Modern, Light",
+                aiTitle: "✨ AI Tools",
+                aiTabDraft: "Draft to Design",
+                aiTabImage: "Generate Image",
+                aiDraftDesc: "Enter your article draft, and AI will suggest a catchphrase and an image prompt.",
+                catchphrase: "💡 Catchphrase",
+                addAsText: "Add as Text",
+                imgPrompt: "🖼️ Image Prompt",
+                usePrompt: "Use this Prompt",
+                analyze: "Analyze Draft",
+                aiImgDesc: "Describe the image you want. Japanese input is automatically translated.",
+                styleNone: "Style: None",
+                stylePhoto: "Photorealistic",
+                styleFlat: "Flat Illustration",
+                styleAnime: "Anime Style",
+                styleWater: "Watercolor",
+                styleOil: "Oil Painting",
+                style3d: "3D Render",
+                stylePixel: "Pixel Art",
+                styleCyber: "Cyberpunk",
+                generate: "Generate",
+                addToCanvas: "Add to Canvas",
+                transTitle: "Magic Eraser Settings",
+                threshold: "Threshold:",
+                transDesc: "Adjusts how much similar color to remove.",
+                processing: "Processing...",
+                rendering: "Rendering..."
+            },
+            ja: {
+                staticMode: "静止画",
+                gifMode: "GIF変換",
+                sizeStandard: "基本 (1280x670)",
+                sizeHalf: "ハーフ (1280x350)",
+                sizeIcon: "アイコン (480x480)",
+                sizeStamp: "LINEスタンプ (370x320)",
+                saveImage: "💾 画像を保存",
+                select: "選択",
+                pen: "ペン",
+                shapes: "図形",
+                magic: "透明化",
+                ai: "AI機能",
+                zoom: "ズーム",
+                bgColor: "背景色",
+                addText: "文字追加",
+                addImage: "画像追加",
+                undo: "戻る",
+                redo: "進む",
+                color: "色",
+                eraserTrans: "消しゴム(透明)",
+                width: "太さ",
+                run: "実行",
+                settings: "設定",
+                zoomIn: "拡大",
+                zoomOut: "縮小",
+                fit: "Fit",
+                fill: "塗り",
+                noFill: "塗り無し",
+                stroke: "線",
+                strokeWidth: "線幅",
+                clone: "複製",
+                front: "前面",
+                back: "背面",
+                delete: "削除",
+                crop: "切り抜く",
+                cancel: "キャンセル",
+                gifTitle: "🎬 GIF変換",
+                selectVideo: "📂 動画選択",
+                videoPlaceholder: "動画ファイルを読み込んでください",
+                range: "範囲",
+                time: "時間",
+                preview: "▶ 再生確認",
+                aspectOriginal: "元の比率",
+                aspectSquare: "正方形 (1:1)",
+                aspectWide: "横長 (16:9)",
+                fpsLow: "5 fps (軽量)",
+                fpsStd: "10 fps (標準)",
+                fpsSmooth: "15 fps (滑らか)",
+                fpsHeavy: "20 fps (高負荷)",
+                browserProcess: "※ブラウザで処理",
+                createGif: "GIFを作成する",
+                waiting: "待機中...",
+                done: "✨ 生成完了",
+                saveGif: "画像を保存",
+                fontTitle: "フォントを選択",
+                close: "閉じる",
+                saveTitle: "💾 画像を保存",
+                saveDesc: "保存する形式を選択してください。",
+                pngDesc: "高画質・背景透過 (推奨)",
+                jpgDesc: "写真向き・軽量・透過なし",
+                webpDesc: "次世代フォーマット・軽量",
+                aiTitle: "✨ AI機能",
+                aiTabDraft: "記事から提案",
+                aiTabImage: "画像生成",
+                aiDraftDesc: "記事のドラフト（本文）を入力すると、AIが内容を分析し、最適なキャッチコピー案と背景画像のプロンプトを提案します。",
+                catchphrase: "💡 キャッチコピー",
+                addAsText: "文字として追加",
+                imgPrompt: "🖼️ 画像プロンプト",
+                usePrompt: "画像生成画面へ転送",
+                analyze: "構成案を生成",
+                aiImgDesc: "欲しい画像の内容を入力してください。日本語で入力してもAIが自動で翻訳して生成します。",
+                styleNone: "画風: 指定なし",
+                stylePhoto: "写真風",
+                styleFlat: "イラスト(フラット)",
+                styleAnime: "アニメ調",
+                styleWater: "水彩画",
+                styleOil: "油絵",
+                style3d: "3D CG",
+                stylePixel: "ドット絵",
+                styleCyber: "サイバーパンク",
+                generate: "生成する",
+                addToCanvas: "キャンバスに追加",
+                transTitle: "透明化(スポイト)設定",
+                threshold: "許容値:",
+                transDesc: "似た色をどれくらいまとめて消すかを調整します。",
+                processing: "処理中...",
+                rendering: "レンダリング中..."
+            }
+        };
+
+        let currentLang = 'en'; // Default Language
+
+        function t(key) {
+            return TRANSLATIONS[currentLang][key] || key;
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'ja' : 'en';
+            updateAllTexts();
+        }
+
+        function updateAllTexts() {
+            // Update static elements with data-t attribute
+            document.querySelectorAll('[data-t]').forEach(el => {
+                const key = el.getAttribute('data-t');
+                if (TRANSLATIONS[currentLang][key]) {
+                    el.innerText = TRANSLATIONS[currentLang][key];
+                }
+            });
+
+            // Re-render Dynamic Menu
+            renderTopMenu();
+
+            // Update placeholders if needed
+            const draftInput = document.getElementById('aiDraftInput');
+            if(draftInput) draftInput.placeholder = currentLang === 'en' ? "Enter draft text here..." : "記事の本文を入力してください...";
+            
+            const imgInput = document.getElementById('aiImagePrompt');
+            if(imgInput) imgInput.placeholder = currentLang === 'en' ? "e.g. A cafe by the sea, coffee" : "例: 海辺のカフェ、コーヒー (日本語OK)";
+        }
+
+        // --- Init ---
+        const SIZES = { 
+            header: { w: 1280, h: 670 }, 
+            article: { w: 1280, h: 350 }, 
+            icon: { w: 480, h: 480 },
+            line_stamp: { w: 370, h: 320 }
+        };
+        let currentSizeKey = 'icon'; // Default Icon
+        let REAL_WIDTH = SIZES.icon.w;
+        let REAL_HEIGHT = SIZES.icon.h;
+        
+        const canvas = new fabric.Canvas('c', {
+            width: REAL_WIDTH,
+            height: REAL_HEIGHT,
+            backgroundColor: '#ffffff',
+            preserveObjectStacking: true,
+            selection: true
+        });
+
+        // Config Fabric
+        fabric.Object.prototype.set({
+            cornerSize: 30, touchCornerSize: 30, transparentCorners: false,
+            cornerColor: '#41b883', cornerStrokeColor: '#fff', borderColor: '#41b883',
+            borderScaleFactor: 2, padding: 8
+        });
+        
+        // Define Shapes
+        const SHAPES = [
+            { icon: '➡️', type: 'arrow-right', path: 'M 0 50 L 100 50 L 100 20 L 180 80 L 100 140 L 100 110 L 0 110 Z' },
+            { icon: '⬅️', type: 'arrow-left', path: 'M 180 50 L 80 50 L 80 20 L 0 80 L 80 140 L 80 110 L 180 110 Z' },
+            { icon: '⬆️', type: 'arrow-up', path: 'M 50 180 L 50 80 L 20 80 L 80 0 L 140 80 L 110 80 L 110 180 Z' },
+            { icon: '⬇️', type: 'arrow-down', path: 'M 50 0 L 50 100 L 20 100 L 80 180 L 140 100 L 110 100 L 110 0 Z' },
+            { icon: '🗨️', type: 'bubble-oval', path: 'M 20 20 H 180 A 20 20 0 0 1 200 40 V 120 A 20 20 0 0 1 180 140 H 80 L 40 170 L 40 140 H 20 A 20 20 0 0 1 0 120 V 40 A 20 20 0 0 1 20 20 Z' },
+            { icon: '💭', type: 'bubble-cloud', path: 'M 50 30 Q 30 0 70 10 Q 110 0 130 30 Q 180 20 170 60 Q 200 100 160 120 Q 150 160 110 150 L 90 180 L 80 150 Q 30 160 30 120 Q 0 90 30 60 Q 10 30 50 30 Z' },
+            { icon: '⚪', type: 'circle', shape: 'circle' },
+            { icon: '⬜', type: 'rect', shape: 'rect' },
+            { icon: '⭐', type: 'star', path: 'M 100 0 L 130 60 L 200 70 L 150 120 L 160 190 L 100 160 L 40 190 L 50 120 L 0 70 L 70 60 Z' },
+            { icon: '❤️', type: 'heart', path: 'M 100 180 L 20 80 Q 0 40 50 20 Q 100 40 100 80 Q 100 40 150 20 Q 200 40 180 80 Z' },
+            { icon: '❌', type: 'cross', path: 'M 20 0 L 0 20 L 80 100 L 0 180 L 20 200 L 100 120 L 180 200 L 200 180 L 120 100 L 200 20 L 180 0 L 100 80 Z' },
+            { icon: '💥', type: 'impact', path: 'M 100 100 L 100 0 L 120 80 L 180 20 L 150 100 L 200 100 L 150 120 L 180 180 L 120 150 L 100 200 L 80 150 L 20 180 L 50 120 L 0 100 L 50 80 L 20 20 Z' }
+        ];
+
+        // --- State Management ---
+        let currentMode = 'select'; // select, pen, eraser, transparency, ai, zoom, shape
+        let eraserType = 'delete'; // delete only
+        let zoomLevel = 1.0; // Current zoom level relative to fit scale
+        let stateHistory = [];
+        let historyIndex = -1;
+        let isHistoryLocked = false;
+        let pickedColor = null; // Store picked color
+        let isPenTransparent = false; // Pen transparency toggle
+
+        // --- GIF Logic Variables (Consolidated here) ---
+        let videoFile = null;
+        let videoEl = document.getElementById('sourceVideo');
+        let gifRange = { start: 0, end: 1 };
+
+        function saveHistory() {
+            if(isHistoryLocked) return;
+            if (historyIndex < stateHistory.length - 1) {
+                stateHistory = stateHistory.slice(0, historyIndex + 1);
+            }
+            stateHistory.push(JSON.stringify(canvas));
+            if (stateHistory.length > 20) {
+                stateHistory.shift();
+            } else {
+                historyIndex++;
+            }
+        }
+
+        function undo() { if(historyIndex > 0) loadHistory(--historyIndex); }
+        function redo() { if(historyIndex < stateHistory.length - 1) loadHistory(++historyIndex); }
+        function loadHistory(idx) {
+            isHistoryLocked = true;
+            canvas.loadFromJSON(stateHistory[idx], () => {
+                canvas.renderAll();
+                isHistoryLocked = false;
+                if(currentMode === 'transparency') setCanvasMode('select');
+                if(currentMode === 'pen') setCanvasMode('pen'); 
+            });
+        }
+
+        canvas.on('object:added', saveHistory);
+        canvas.on('object:modified', saveHistory);
+        canvas.on('object:removed', saveHistory);
+        saveHistory();
+
+        // --- Menu Rendering Logic ---
+        function renderTopMenu() {
+            const mainRow = document.getElementById('mainMenuRow');
+            const subRow = document.getElementById('subMenuRow');
+            const activeObj = canvas.getActiveObject();
+            
+            mainRow.innerHTML = '';
+            subRow.innerHTML = '';
+            subRow.style.display = 'none';
+            mainRow.className = 'main-menu-row'; 
+
+            // Main Menu Tabs
+            const mainItems = [
+                { id:'select', icon:'👆', label: t('select'), action:()=>setCanvasMode('select'), active:currentMode==='select' },
+                { id:'pen', icon:'✏️', label: t('pen'), action:()=>setCanvasMode('pen'), active:currentMode==='pen' },
+                { id:'shape', icon:'⭐', label: t('shapes'), action:()=>setCanvasMode('shape'), active:currentMode==='shape' },
+                { id:'transparency', icon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="10" y1="9" x2="10" y2="9.01"/></svg>', label: t('magic'), action:()=>setCanvasMode('transparency'), active:currentMode==='transparency' },
+                { id:'ai', icon:'✨', label: t('ai'), action:()=>setCanvasMode('ai'), active:currentMode==='ai' },
+                { id:'zoom', icon:'🔍', label: t('zoom'), action:()=>setCanvasMode('zoom'), active:currentMode==='zoom' },
+                { id:'bg', icon:'🖌️', label: t('bgColor'), action:()=>document.getElementById('bgColorPicker').click() },
+                { id:'text', icon:'🔤', label: t('addText'), action:addText },
+                { id:'image', icon:'📷', label: t('addImage'), action:()=>document.getElementById('imgLoader').click() },
+                { id:'undo', icon:'↩️', label: t('undo'), action:undo },
+                { id:'redo', icon:'↪️', label: t('redo'), action:redo },
+            ];
+
+            mainItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `menu-item ${item.active ? 'active' : ''}`;
+                div.onclick = item.action;
+                // Check if icon is SVG string or emoji char
+                if(item.icon.startsWith('<')) {
+                    div.innerHTML = `<span class="menu-icon">${item.icon}</span><span>${item.label}</span>`;
+                } else {
+                    div.innerHTML = `<span class="menu-icon">${item.icon}</span><span>${item.label}</span>`;
+                }
+                mainRow.appendChild(div);
+            });
+
+            // Submenu Logic
+            let subContent = '';
+            let showSub = false;
+
+            if (currentMode === 'shape') {
+                showSub = true;
+                subContent = SHAPES.map(s => 
+                    `<div class="sub-item" onclick="addShape('${s.type}')" title="${s.type}">
+                        <span style="font-size:16px;">${s.icon}</span>
+                     </div>`
+                ).join('');
+            } else if (currentMode === 'pen') {
+                showSub = true;
+                // Pen Settings
+                subContent = `
+                    <div class="sub-item" onclick="document.getElementById('penColorPicker').click()">🎨 ${t('color')}</div>
+                    <div class="sub-item ${isPenTransparent ? 'active' : ''}" onclick="togglePenTransparent()">
+                        <span style="font-size:10px;">${t('eraserTrans')}</span>
+                    </div>
+                    <div class="slider-wrapper-menu">
+                        <span class="slider-label">${t('width')}</span>
+                        <input type="range" min="1" max="50" value="${canvas.freeDrawingBrush ? canvas.freeDrawingBrush.width : 5}" oninput="updatePenWidth(this.value)">
+                    </div>
+                `;
+            } else if (currentMode === 'transparency') {
+                showSub = true;
+                subContent = `
+                     <div class="sub-item" style="${pickedColor ? 'border:1px solid '+pickedColor : ''}" id="dropperPreviewItem">
+                        <div class="color-preview-mini" style="background:${pickedColor||'white'}"></div>
+                        <span style="font-size:10px;">${pickedColor||'N/A'}</span>
+                     </div>
+                     <div class="sub-item" onclick="applyChromaKey()" style="color:var(--trans); border-color:var(--trans);">
+                        <span>💧 ${t('run')}</span>
+                     </div>
+                     <div class="sub-item" onclick="openTransModal()">⚙️ ${t('settings')}</div>
+                `;
+            } else if (currentMode === 'ai') {
+                showSub = true;
+                subContent = `
+                    <div class="sub-item" onclick="switchAiTab('draft'); openAiModal();">📄 ${t('aiTabDraft')}</div>
+                    <div class="sub-item" onclick="switchAiTab('image'); openAiModal();">🎨 ${t('aiTabImage')}</div>
+                `;
+            } else if (currentMode === 'zoom') {
+                showSub = true;
+                subContent = `
+                    <div class="sub-item" onclick="changeZoom(0.1)">➕ ${t('zoomIn')}</div>
+                    <div class="sub-item" onclick="changeZoom(-0.1)">➖ ${t('zoomOut')}</div>
+                    <div class="sub-item" onclick="resetZoom()">🔄 ${t('fit')}</div>
+                    <div class="sub-item" style="font-size:11px; font-weight:bold; margin-left:10px; color:#666;">${Math.round(zoomLevel*100)}%</div>
+                `;
+            } else if (activeObj && currentMode === 'select') {
+                // Object Context Menu in Select Mode
+                showSub = true;
+                if (activeObj.type === 'i-text' || activeObj.type === 'text') {
+                    subContent = `
+                        <div class="sub-item" onclick="document.getElementById('textColorPicker').click()">🎨 ${t('color')}</div>
+                        <div class="sub-item" onclick="openFontModal()">🅰️ Font</div>
+                        <div class="sub-item" onclick="cloneObject()">📋 ${t('clone')}</div>
+                        <div class="sub-item" onclick="bringFront()">⬆️ ${t('front')}</div>
+                        <div class="sub-item" onclick="sendBack()">⬇️ ${t('back')}</div>
+                        <div class="sub-item" style="color:var(--danger); border-color:#ffccc7;" onclick="deleteSelected()">🗑️ ${t('delete')}</div>
+                    `;
+                } else if (activeObj.type === 'image') {
+                    subContent = `
+                        <div class="sub-item" onclick="startCrop()">✂️ ${t('crop')}</div>
+                        <div class="sub-item" onclick="cloneObject()">📋 ${t('clone')}</div>
+                        <div class="sub-item" onclick="bringFront()">⬆️ ${t('front')}</div>
+                        <div class="sub-item" onclick="sendBack()">⬇️ ${t('back')}</div>
+                        <div class="sub-item" style="color:var(--danger); border-color:#ffccc7;" onclick="deleteSelected()">🗑️ ${t('delete')}</div>
+                    `;
+                } else {
+                    // Path/Shape Objects (Updated for Color/Stroke control)
+                      subContent = `
+                        <div class="sub-item" onclick="document.getElementById('textColorPicker').click()">🎨 ${t('fill')}</div>
+                        <div class="sub-item" onclick="setShapeFillTransparent()">🚫 ${t('noFill')}</div>
+                        <div class="sub-item" onclick="document.getElementById('strokeColorPicker').click()">✏️ ${t('stroke')}</div>
+                        <div class="slider-wrapper-menu" style="margin-left:5px;">
+                            <span class="slider-label">${t('strokeWidth')}</span>
+                            <input type="range" min="0" max="20" value="${activeObj.strokeWidth || 0}" oninput="updateStrokeWidth(this.value)">
+                        </div>
+                        <div class="sub-item" onclick="cloneObject()">📋 ${t('clone')}</div>
+                        <div class="sub-item" onclick="bringFront()">⬆️ ${t('front')}</div>
+                        <div class="sub-item" onclick="sendBack()">⬇️ ${t('back')}</div>
+                        <div class="sub-item" style="color:var(--danger); border-color:#ffccc7;" onclick="deleteSelected()">🗑️ ${t('delete')}</div>
+                    `;
+                }
+            }
+
+            if (showSub) {
+                subRow.innerHTML = subContent;
+                subRow.style.display = 'flex';
+            }
+        }
+
+        // --- Shape Adding ---
+        function addShape(type) {
+            const shapeData = SHAPES.find(s => s.type === type);
+            if (!shapeData) return;
+
+            // Common Options for better resizing
+            const commonOpts = {
+                strokeUniform: true, // Prevents stroke from scaling
+                strokeWidth: 0,
+                stroke: 'transparent'
+            };
+
+            let obj;
+            if (shapeData.shape === 'circle') {
+                obj = new fabric.Circle({
+                    ...commonOpts,
+                    radius: 50,
+                    fill: '#000000',
+                    left: canvas.width/2 - 50,
+                    top: canvas.height/2 - 50
+                });
+            } else if (shapeData.shape === 'rect') {
+                obj = new fabric.Rect({
+                    ...commonOpts,
+                    width: 100,
+                    height: 100,
+                    fill: '#000000',
+                    left: canvas.width/2 - 50,
+                    top: canvas.height/2 - 50
+                });
+            } else if (shapeData.path) {
+                obj = new fabric.Path(shapeData.path, {
+                    ...commonOpts,
+                    fill: '#000000',
+                });
+                // Center and Scale
+                obj.scaleToWidth(100);
+                obj.set({
+                    left: canvas.width/2 - (obj.getScaledWidth()/2),
+                    top: canvas.height/2 - (obj.getScaledHeight()/2)
+                });
+            }
+
+            if (obj) {
+                canvas.add(obj);
+                canvas.setActiveObject(obj);
+                setCanvasMode('select'); // Auto switch to select to allow color change
+                saveHistory();
+            }
+        }
+
+        // Transparency Path Visibility Toggle
+        function toggleTransparentObjectsVisibility(visible) {
+            const objects = canvas.getObjects();
+            objects.forEach(obj => {
+                if (obj.isTransparentPen) {
+                    if (visible) {
+                        // Visible (Delete Mode)
+                        obj.set({
+                            globalCompositeOperation: 'source-over',
+                            stroke: 'rgba(255, 50, 50, 0.8)', // Show Red
+                            selectable: true,
+                            evented: true,
+                            strokeUniform: true
+                        });
+                    } else {
+                        // Invisible (Transparent Effect)
+                        obj.set({
+                            globalCompositeOperation: 'destination-out',
+                            stroke: 'black',
+                            selectable: false,
+                            evented: false
+                        });
+                    }
+                }
+            });
+            canvas.requestRenderAll();
+        }
+
+        // --- Mode Switching Logic ---
+        function setCanvasMode(mode) {
+            // Reset trans visibility
+            if (currentMode === 'eraser' && mode !== 'eraser') {
+                toggleTransparentObjectsVisibility(false);
+            }
+
+            currentMode = mode;
+            canvas.isDrawingMode = false;
+            canvas.selection = true;
+            canvas.defaultCursor = 'default';
+            canvas.hoverCursor = 'move';
+            
+            canvas.off('mouse:down', pickColorStart);
+            canvas.off('mouse:move', pickColorMove);
+            canvas.off('mouse:up', pickColorEnd);
+            canvas.off('mouse:out', hideMagnifier); 
+            canvas.off('mouse:down', eraserClick); // Remove eraser click handler if exists
+
+            document.getElementById('magnifier').style.display = 'none';
+            document.getElementById('pen-cursor').style.display = 'none'; 
+
+            if (mode === 'pen') {
+                canvas.isDrawingMode = true;
+                const brush = new fabric.PencilBrush(canvas);
+                brush.width = 5;
+                // Set color based on transparency mode
+                if (isPenTransparent) {
+                    brush.color = "rgba(255,255,255,1)"; // Dummy color for drawing, will become transparent later
+                } else {
+                    brush.color = document.getElementById('penColorPicker').value;
+                }
+                canvas.freeDrawingBrush = brush;
+                
+                canvas.discardActiveObject();
+                canvas.selection = false;
+                canvas.forEachObject(o => o.selectable = false);
+            } else if (mode === 'eraser') {
+                // Eraser is now "Click to Delete"
+                canvas.selection = false;
+                canvas.defaultCursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'red\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><line x1=\'18\' y1=\'6\' x2=\'6\' y2=\'18\'></line><line x1=\'6\' y1=\'6\' x2=\'18\' y2=\'18\'></line></svg>") 12 12, auto';
+                canvas.hoverCursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'red\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><line x1=\'18\' y1=\'6\' x2=\'6\' y2=\'18\'></line><line x1=\'6\' y1=\'6\' x2=\'18\' y2=\'18\'></line></svg>") 12 12, auto';
+                
+                // Show transparent objects
+                toggleTransparentObjectsVisibility(true);
+
+                canvas.forEachObject(o => {
+                    o.selectable = true; // Make them targetable
+                    o.lockMovementX = true; o.lockMovementY = true;
+                    o.lockRotation = true; o.lockScalingX = true; o.lockScalingY = true;
+                });
+                
+                canvas.on('mouse:down', eraserClick);
+            } else if (mode === 'transparency') {
+                // This is the old "dropper" mode
+                canvas.selection = false;
+                canvas.forEachObject(o => o.selectable = false);
+                canvas.defaultCursor = 'crosshair';
+                
+                canvas.on('mouse:down', pickColorStart);
+                canvas.on('mouse:move', pickColorMove);
+                canvas.on('mouse:up', pickColorEnd); 
+                canvas.on('mouse:out', hideMagnifier); 
+                
+                pickedColor = null; 
+            } else if (mode === 'ai' || mode === 'shape' || mode === 'select' || mode === 'zoom') {
+                // Select Mode and others
+                canvas.forEachObject(o => {
+                    o.selectable = true;
+                    o.lockMovementX = false; o.lockMovementY = false;
+                    o.lockRotation = false; o.lockScalingX = false; o.lockScalingY = false;
+                });
+            }
+            
+            // Pen Cursor Logic
+            canvas.on('mouse:move', (opt) => {
+               if (currentMode === 'pen') updatePenCursorMove(opt);
+            });
+            canvas.on('mouse:out', () => {
+               if (currentMode === 'pen') hidePenCursor();
+            });
+            canvas.on('mouse:over', () => {
+               if (currentMode === 'pen') showPenCursor();
+            });
+
+            canvas.renderAll();
+            renderTopMenu();
+        }
+
+        // --- Eraser Click Function ---
+        function eraserClick(opt) {
+            if (opt.target) {
+                canvas.remove(opt.target);
+                saveHistory();
+            }
+        }
+
+        // --- Pen Function ---
+        function updatePenWidth(val) {
+            if(canvas.freeDrawingBrush) canvas.freeDrawingBrush.width = parseInt(val, 10);
+            updatePenCursorSize(); // Update cursor size
+            showBrushPreview(parseInt(val, 10)); // Show center preview
+        }
+        document.getElementById('penColorPicker').oninput = (e) => {
+            isPenTransparent = false; // Disable transparency when picking color
+            if(canvas.freeDrawingBrush) canvas.freeDrawingBrush.color = e.target.value;
+            renderTopMenu();
+            showBrushPreview(canvas.freeDrawingBrush.width);
+        }
+        
+        function togglePenTransparent() {
+            isPenTransparent = !isPenTransparent;
+            if (canvas.freeDrawingBrush) {
+                if (isPenTransparent) {
+                    canvas.freeDrawingBrush.color = "rgba(255,0,0,0.5)"; // Show red trace while drawing
+                } else {
+                    canvas.freeDrawingBrush.color = document.getElementById('penColorPicker').value;
+                }
+            }
+            renderTopMenu();
+            showBrushPreview(canvas.freeDrawingBrush.width);
+        }
+
+        let brushPreviewTimeout;
+        function showBrushPreview(width) {
+            const el = document.getElementById('brush-preview');
+            el.style.width = width + 'px';
+            el.style.height = width + 'px';
+            el.style.display = 'block';
+            
+            if (isPenTransparent) {
+                el.style.background = 'rgba(255, 50, 50, 0.5)';
+                el.style.border = '1px solid red';
+            } else {
+                const color = document.getElementById('penColorPicker').value;
+                el.style.background = color;
+                el.style.border = '1px solid #fff';
+            }
+
+            clearTimeout(brushPreviewTimeout);
+            brushPreviewTimeout = setTimeout(() => {
+                el.style.display = 'none';
+            }, 1000);
+        }
+
+        // --- Standard Stroke update ---
+        function updateStrokeWidth(val) {
+            const o = canvas.getActiveObject();
+            if (o) {
+                const width = parseInt(val, 10);
+                o.set('strokeWidth', width);
+                // If stroke was transparent but width > 0, default to black if not set
+                if (width > 0 && (o.stroke === 'transparent' || !o.stroke)) {
+                    o.set('stroke', '#000000');
+                }
+                canvas.renderAll();
+                saveHistory();
+            }
+        }
+
+        canvas.on('path:created', function(opt) {
+            // Check if pen transparency is active
+            if (currentMode === 'pen' && isPenTransparent) {
+                const path = opt.path;
+                path.globalCompositeOperation = 'destination-out';
+                path.stroke = 'black'; // Color doesn't matter for destination-out, just opacity
+                path.selectable = false;
+                path.evented = false;
+                path.isTransparentPen = true; // Mark as transparent pen path
+                canvas.requestRenderAll();
+            }
+            saveHistory();
+        });
+
+        // --- Zoom Logic ---
+        function changeZoom(delta) {
+            zoomLevel += delta;
+            if(zoomLevel < 0.1) zoomLevel = 0.1;
+            if(zoomLevel > 3.0) zoomLevel = 3.0;
+            fitCanvasToScreen(); // Re-calculate with new zoomLevel
+            renderTopMenu(); // Update % display
+        }
+        
+        function resetZoom() {
+            zoomLevel = 1.0;
+            fitCanvasToScreen();
+            renderTopMenu();
+        }
+
+        // --- Transparency (Dropper) Logic ---
+        let isPicking = false;
+
+        function updateMagnifier(e) {
+            const magnifier = document.getElementById('magnifier');
+            const mCanvas = document.getElementById('magnifierCanvas');
+            const ctx = mCanvas.getContext('2d');
+            
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            const pointer = canvas.getPointer(e);
+            
+            magnifier.style.display = 'block';
+            magnifier.style.left = (clientX - 60) + 'px'; 
+            magnifier.style.top = (clientY - 140) + 'px'; 
+
+            const zoom = 4;
+            const w = mCanvas.width;
+            const h = mCanvas.height;
+            const mainEl = canvas.getContext().canvas;
+            const ratio = canvas.getRetinaScaling();
+            const canvasZoom = canvas.getZoom(); // Added for fix
+            
+            // Fix: calculate source pixel using current canvas zoom
+            const sx = (pointer.x * canvasZoom * ratio) - (w / 2 / zoom);
+            const sy = (pointer.y * canvasZoom * ratio) - (h / 2 / zoom);
+            
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = "white";
+            ctx.fillRect(0,0,w,h);
+            ctx.drawImage(mainEl, sx, sy, w/zoom, h/zoom, 0, 0, w, h);
+            
+            ctx.strokeStyle = 'rgba(255,0,0,0.8)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h);
+            ctx.moveTo(0, h/2); ctx.lineTo(w, h/2);
+            ctx.stroke();
+            ctx.strokeRect(w/2 - 3, h/2 - 3, 6, 6);
+        }
+        
+        function hideMagnifier() {
+             document.getElementById('magnifier').style.display = 'none';
+        }
+
+        // --- Pen Cursor Logic ---
+        function getCanvasScale() {
+            const rect = canvas.getElement().getBoundingClientRect();
+            return rect.width / canvas.width;
+        }
+
+        function updatePenCursorMove(opt) {
+            const cursor = document.getElementById('pen-cursor');
+            const e = opt.e;
+            
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            cursor.style.display = 'block';
+            cursor.style.left = x + 'px';
+            cursor.style.top = y + 'px';
+            
+            updatePenCursorSize();
+        }
+        
+        function updatePenCursorSize() {
+            const cursor = document.getElementById('pen-cursor');
+            if (cursor.style.display === 'block') {
+                 const rect = canvas.getElement().getBoundingClientRect();
+                 const visualScale = rect.width / canvas.width;
+                 const finalSize = (canvas.freeDrawingBrush.width || 5) * visualScale;
+                 
+                 cursor.style.width = finalSize + 'px';
+                 cursor.style.height = finalSize + 'px';
+            }
+        }
+
+        function hidePenCursor() {
+            document.getElementById('pen-cursor').style.display = 'none';
+        }
+        function showPenCursor() {
+            if(currentMode === 'pen') document.getElementById('pen-cursor').style.display = 'block';
+        }
+
+        function getColorAtPointer(e) {
+            const pointer = canvas.getPointer(e);
+            const ctx = canvas.getContext();
+            const ratio = canvas.getRetinaScaling();
+            const canvasZoom = canvas.getZoom(); // Added for fix
+            
+            // Fix: calculate pixel using current canvas zoom
+            const pixel = ctx.getImageData(pointer.x * canvasZoom * ratio, pointer.y * canvasZoom * ratio, 1, 1).data;
+
+            if(pixel[3]===0 && !canvas.backgroundColor) return null; 
+            
+            const r=pixel[0], g=pixel[1], b=pixel[2];
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+        }
+
+        function pickColorStart(opt) { isPicking = true; }
+        function pickColorMove(opt) { updateMagnifier(opt.e); }
+        function pickColorEnd(opt) {
+            isPicking = false;
+            document.getElementById('magnifier').style.display = 'none';
+            const color = getColorAtPointer(opt.e);
+            if(color) {
+                pickedColor = color;
+                renderTopMenu(); 
+            }
+        }
+
+        function applyChromaKey() {
+            if(!pickedColor) return alert(currentLang === 'en' ? "Please select a color on the canvas first." : "まずはキャンバス上で色を選択してください。");
+            
+            let count = 0;
+            const threshold = parseFloat(document.getElementById('chromaThreshold').value);
+            const targetColor = new fabric.Color(pickedColor).getSource(); // [r, g, b, a]
+            const maxDist = 441; // sqrt(255^2 * 3)
+
+            // Helper to check color match
+            const isMatch = (colorStr) => {
+                if(!colorStr || colorStr === 'transparent') return false;
+                // Handle gradients/patterns - skip simple string check
+                if (typeof colorStr !== 'string') return false;
+                
+                const c = new fabric.Color(colorStr).getSource();
+                const dist = Math.sqrt(Math.pow(c[0]-targetColor[0],2) + Math.pow(c[1]-targetColor[1],2) + Math.pow(c[2]-targetColor[2],2));
+                return (dist / maxDist) <= threshold;
+            };
+
+            // 1. Check Background Color
+            if (canvas.backgroundColor) {
+                if (typeof canvas.backgroundColor === 'string' && isMatch(canvas.backgroundColor)) {
+                     canvas.setBackgroundColor(null, canvas.renderAll.bind(canvas));
+                     count++;
+                }
+            }
+
+            // 2. Loop all objects
+            canvas.getObjects().forEach(obj => {
+                // Image objects -> Use Filter
+                if(obj.type === 'image') {
+                    const filter = new fabric.Image.filters.RemoveColor({
+                        distance: threshold,
+                        color: pickedColor
+                    });
+                    obj.filters.push(filter);
+                    obj.applyFilters();
+                    count++;
+                } 
+                // Vector objects (Text, Shapes, Paths)
+                else {
+                    let changed = false;
+                    // Check Fill
+                    if (obj.fill && typeof obj.fill === 'string') {
+                        if (isMatch(obj.fill)) {
+                            obj.set('fill', 'transparent');
+                            changed = true;
+                        }
+                    }
+                    // Check Stroke
+                    if (obj.stroke && typeof obj.stroke === 'string') {
+                        if (isMatch(obj.stroke)) {
+                            obj.set('stroke', 'transparent');
+                            changed = true;
+                        }
+                    }
+                    if(changed) count++;
+                }
+            });
+            
+            if(count > 0) {
+                canvas.renderAll();
+                saveHistory();
+                alert(currentLang === 'en' ? `Transparent applied to ${count} items matching ${pickedColor}.` : `背景、画像、およびオブジェクトの色 ${pickedColor} を透明化しました。(対象: ${count}箇所)`);
+                setCanvasMode('select'); 
+            } else {
+                alert(currentLang === 'en' ? "No matching colors found." : "一致する色が背景または画像に見つかりませんでした。許容値を調整してみてください。");
+            }
+        }
+
+
+        // --- Standard Canvas Ops ---
+        canvas.on('selection:created', renderTopMenu);
+        canvas.on('selection:updated', renderTopMenu);
+        canvas.on('selection:cleared', renderTopMenu);
+        renderTopMenu();
+
+        function changeCanvasSize() {
+            const val = document.getElementById('canvasSizeSelect').value;
+            const size = SIZES[val] || SIZES.header;
+            currentSizeKey = val;
+            
+            // Update logic size
+            REAL_WIDTH = size.w;
+            REAL_HEIGHT = size.h;
+            
+            // Re-calc zoom
+            fitCanvasToScreen();
+        }
+
+        function fitCanvasToScreen() {
+            const area = document.getElementById('static-area');
+            if(!area || area.style.display==='none') return;
+            
+            const rect = area.getBoundingClientRect();
+            const availW = rect.width - 40; // margin
+            const availH = rect.height - 40;
+            
+            if(availW <= 0 || availH <= 0) return;
+            
+            // Base scale
+            let scale = Math.min(availW / REAL_WIDTH, availH / REAL_HEIGHT);
+            
+            // Apply zoom
+            scale *= zoomLevel;
+            
+            // Min scale limit
+            if(scale < 0.05) scale = 0.05;
+            
+            // Display dimensions
+            const displayW = Math.floor(REAL_WIDTH * scale);
+            const displayH = Math.floor(REAL_HEIGHT * scale);
+            
+            // Update wrapper
+            const wrapper = document.getElementById('canvas-wrapper');
+            wrapper.style.width = displayW + 'px';
+            wrapper.style.height = displayH + 'px';
+            
+            // Update Fabric
+            canvas.setDimensions({ width: displayW, height: displayH });
+            canvas.setZoom(scale);
+            
+            canvas.requestRenderAll();
+        }
+        
+        window.addEventListener('resize', () => window.requestAnimationFrame(fitCanvasToScreen));
+
+        document.getElementById('imgLoader').onchange = (e) => {
+            if(e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (f) => addImageToCanvas(f.target.result);
+                reader.readAsDataURL(e.target.files[0]);
+            }
+            e.target.value = '';
+        }
+
+        function addImageToCanvas(url) {
+            fabric.Image.fromURL(url, (img) => {
+                const scale = Math.min((canvas.width * 0.5) / img.width, (canvas.height * 0.5) / img.height);
+                img.scale(scale);
+                img.set({ left: canvas.width/2 - (img.getScaledWidth()/2), top: canvas.height/2 - (img.getScaledHeight()/2) });
+                canvas.add(img);
+                canvas.setActiveObject(img);
+                setCanvasMode('select');
+            }, { crossOrigin: 'anonymous' });
+        }
+
+        function addText(content) {
+            const textContent = (typeof content === 'string') ? content : 'Text';
+            const text = new fabric.IText(textContent, {
+                left: canvas.width/2 - 100, top: canvas.height/2,
+                fontFamily: 'Noto Sans JP', fill: '#000000', fontSize: 60
+            });
+            canvas.add(text);
+            canvas.setActiveObject(text);
+            setCanvasMode('select');
+        }
+
+        document.getElementById('textColorPicker').oninput = (e) => {
+            const o = canvas.getActiveObject();
+            if(o && o.set) { o.set('fill', e.target.value); canvas.renderAll(); saveHistory(); }
+        }
+        document.getElementById('strokeColorPicker').oninput = (e) => {
+            const o = canvas.getActiveObject();
+            if(o && o.set) { 
+                o.set('stroke', e.target.value);
+                // If stroke width is 0, make it visible
+                if (!o.strokeWidth || o.strokeWidth === 0) {
+                    o.set('strokeWidth', 4);
+                }
+                canvas.renderAll(); 
+                saveHistory(); 
+                renderTopMenu(); // Re-render to update slider if needed
+            }
+        }
+        document.getElementById('bgColorPicker').oninput = (e) => {
+            canvas.backgroundColor = e.target.value; canvas.renderAll(); saveHistory();
+        }
+        
+        function setShapeFillTransparent() {
+            const o = canvas.getActiveObject();
+            if(o && o.set) {
+                o.set('fill', 'transparent');
+                canvas.renderAll();
+                saveHistory();
+            }
+        }
+
+        function openFontModal() { document.getElementById('fontModal').style.display = 'flex'; }
+        
+        function changeFont(f) {
+            const o = canvas.getActiveObject();
+            if(o && o.set) { o.set('fontFamily', f); canvas.renderAll(); closeModal('fontModal'); }
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openSaveModal() { document.getElementById('saveModal').style.display = 'flex'; }
+        function openTransModal() { document.getElementById('transModal').style.display = 'flex'; }
+        function openAiModal() { document.getElementById('aiModal').style.display = 'flex'; }
+
+        function deleteSelected() { 
+            const activeObjects = canvas.getActiveObjects();
+            if (activeObjects.length) {
+                canvas.discardActiveObject();
+                activeObjects.forEach((obj) => {
+                    canvas.remove(obj);
+                });
+                saveHistory();
+            }
+        }
+        function bringFront() { 
+            const o = canvas.getActiveObject(); if(o){ o.bringForward(); saveHistory(); } 
+        }
+        function sendBack() { 
+            const o = canvas.getActiveObject(); if(o){ o.sendBackwards(); saveHistory(); } 
+        }
+        function cloneObject() {
+            const o = canvas.getActiveObject(); if(!o) return;
+            o.clone((c) => {
+                c.set({
+                    left: o.left + 20, 
+                    top: o.top + 20, 
+                    evented: true,
+                    selectable: true
+                });
+                
+                if (c.type === 'activeSelection') {
+                    c.canvas = canvas;
+                    c.forEachObject(o => canvas.add(o));
+                    c.setCoords();
+                } else {
+                    canvas.add(c);
+                }
+                canvas.setActiveObject(c);
+                canvas.requestRenderAll();
+                saveHistory();
+            });
+        }
+        function makeBgTransparent() { canvas.setBackgroundColor(null, canvas.renderAll.bind(canvas)); saveHistory(); closeModal('transModal'); }
+
+        function executeSave(format) {
+            if(isCropping) return alert(t('cancel') + " first.");
+            closeModal('saveModal');
+            canvas.discardActiveObject(); canvas.renderAll();
+            
+            if (format === 'jpeg' && !canvas.backgroundColor) {
+                const originalBg = canvas.backgroundColor;
+                canvas.backgroundColor = '#ffffff';
+                canvas.renderAll();
+                downloadCanvas(format);
+                canvas.backgroundColor = originalBg;
+                canvas.renderAll();
+            } else {
+                downloadCanvas(format);
+            }
+        }
+        
+        function getFormattedFileName(ext) {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}.${m}.${d}_UniMaker.${ext}`;
+        }
+
+        function downloadCanvas(format) {
+            const url = canvas.toDataURL({ format: format, quality: 0.9, multiplier: 1 });
+            const a = document.createElement('a');
+            a.href = url;
+            const ext = format === 'jpeg' ? 'jpg' : format;
+            a.download = getFormattedFileName(ext);
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        // Shortcuts
+        window.addEventListener('keydown', (e) => {
+            if(['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+            if(e.key==='Delete' || e.key==='Backspace') {
+                const o = canvas.getActiveObject(); if(o && !o.isEditing) { e.preventDefault(); deleteSelected(); }
+            }
+            if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z') {
+                e.preventDefault(); e.shiftKey ? redo() : undo();
+            }
+            if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='y') { e.preventDefault(); redo(); }
+        });
+
+        // Drag Copy
+        let _copyDrag = false, _initL, _initT;
+        canvas.on('mouse:down', (opt) => {
+            if(opt.target && (opt.e.ctrlKey||opt.e.metaKey)) { 
+                _copyDrag=true; 
+                _initL=opt.target.left; 
+                _initT=opt.target.top; 
+            }
+        });
+        canvas.on('object:moving', (opt) => {
+            if(_copyDrag) {
+                opt.target.clone((c) => {
+                    c.set({
+                        left: _initL, 
+                        top: _initT, 
+                        evented: true,
+                        selectable: true
+                    });
+                    
+                    if (c.type === 'activeSelection') {
+                        c.canvas = canvas;
+                        c.forEachObject(o => canvas.add(o));
+                        c.setCoords();
+                    } else {
+                        canvas.add(c);
+                    }
+                });
+                _copyDrag = false; // Run once
+            }
+        });
+        canvas.on('mouse:up', () => _copyDrag = false);
+
+        // Crop (Simplified)
+        let isCropping=false, cropRect, cropImg;
+        
+        // --- Crop Constraint Helper ---
+        function constrainCrop(opt) {
+            const target = opt.target;
+            if (!isCropping || target !== cropRect || !cropImg) return;
+
+            const imgB = cropImg.getBoundingRect();
+            
+            // Current Target State
+            let top = target.top;
+            let left = target.left;
+            let scaleX = target.scaleX;
+            let scaleY = target.scaleY;
+            let width = target.width * scaleX;
+            let height = target.height * scaleY;
+
+            // 1. Size constraint
+            let modified = false;
+            if (width > imgB.width + 1) {
+                scaleX = imgB.width / target.width;
+                width = imgB.width;
+                modified = true;
+            }
+            if (height > imgB.height + 1) {
+                scaleY = imgB.height / target.height;
+                height = imgB.height;
+                modified = true;
+            }
+            
+            if(modified) {
+                target.set({ scaleX, scaleY });
+            }
+
+            // 2. Position constraint
+            if (left < imgB.left) {
+                left = imgB.left;
+            }
+            if (top < imgB.top) {
+                top = imgB.top;
+            }
+            if (left + width > imgB.left + imgB.width) {
+                left = imgB.left + imgB.width - width;
+            }
+            if (top + height > imgB.top + imgB.height) {
+                top = imgB.top + imgB.height - height;
+            }
+
+            target.set({ left, top });
+            target.setCoords(); 
+        }
+
+        function startCrop() {
+            const o = canvas.getActiveObject(); if(!o || o.type!=='image') return alert("Select an image first.");
+            cropImg = o; isCropping = true;
+            canvas.discardActiveObject();
+            canvas.forEachObject(obj => obj.selectable = false);
+            
+            // Get accurate image area
+            let left, top, width, height;
+            
+            if (Math.abs(o.angle % 360) < 0.1) {
+                const p = o.getPointByOrigin('left', 'top');
+                left = p.x;
+                top = p.y;
+                width = o.getScaledWidth();
+                height = o.getScaledHeight();
+            } else {
+                const b = o.getBoundingRect();
+                left = b.left;
+                top = b.top;
+                width = b.width;
+                height = b.height;
+            }
+            
+            const strokeW = 2;
+            
+            cropRect = new fabric.Rect({ 
+                left: left + strokeW/2, 
+                top: top + strokeW/2, 
+                width: width - strokeW, 
+                height: height - strokeW, 
+                fill: 'rgba(0,0,0,0)', 
+                stroke: '#d35400', 
+                strokeWidth: strokeW, 
+                strokeDashArray: [5,5], 
+                transparentCorners: false, 
+                cornerSize: 30, 
+                cornerColor: '#d35400',
+                lockRotation: true, 
+                hasRotatingPoint: false,
+                strokeUniform: true 
+            });
+            
+            canvas.add(cropRect); 
+            canvas.setActiveObject(cropRect);
+            
+            canvas.on('object:moving', constrainCrop);
+            canvas.on('object:scaling', constrainCrop);
+
+            document.getElementById('crop-controls').style.display='flex';
+            document.getElementById('top-menu-container').style.display='none'; 
+        }
+        
+        function cancelCrop() {
+            canvas.remove(cropRect); endCrop();
+        }
+        
+        function performCrop() {
+            const r = cropRect.getBoundingRect();
+            
+            cropRect.visible = false;
+            canvas.renderAll();
+
+            const url = canvas.toDataURL({ left:r.left, top:r.top, width:r.width, height:r.height, format:'png', multiplier:1 });
+            
+            fabric.Image.fromURL(url, (img) => {
+                img.set({left:r.left, top:r.top});
+                canvas.remove(cropImg); 
+                canvas.remove(cropRect);
+                canvas.add(img); 
+                canvas.setActiveObject(img);
+                endCrop();
+            });
+        }
+        
+        function endCrop() {
+            isCropping = false; 
+            
+            canvas.off('object:moving', constrainCrop);
+            canvas.off('object:scaling', constrainCrop);
+            
+            cropRect=null; 
+            cropImg=null;
+            canvas.forEachObject(obj => obj.selectable = true);
+            document.getElementById('crop-controls').style.display='none';
+            document.getElementById('top-menu-container').style.display='flex';
+            setCanvasMode('select');
+        }
+
+        // --- AI Features ---
+        function switchAiTab(t) { 
+            document.querySelectorAll('.ai-tab').forEach(e=>e.classList.remove('active'));
+            document.querySelectorAll('.ai-panel').forEach(e=>e.classList.remove('active'));
+            if(t==='draft'){ document.querySelectorAll('.ai-tab')[0].classList.add('active'); document.getElementById('ai-panel-draft').classList.add('active'); }
+            else { document.querySelectorAll('.ai-tab')[1].classList.add('active'); document.getElementById('ai-panel-image').classList.add('active'); }
+        }
+        
+        let lastGeneratedImageUrl = null;
+
+        // Add Title from AI
+        function addTitleToCanvas(text) {
+            if(!text) return;
+            addText(text); // Use existing addText function with content
+            closeModal('aiModal');
+        }
+
+        // Translate helper
+        async function translateToEnglish(text) {
+             // Basic check if Japanese characters present
+             if (!text.match(/[^\x01-\x7E]/)) return text; 
+
+             try {
+                 const response = await fetch('https://text.pollinations.ai/', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ 
+                         messages: [{ role: 'user', content: `Translate this Japanese text to English for an image generation prompt. Output ONLY the English text.\n\n${text}` }], 
+                         model: 'openai' 
+                     })
+                 });
+                 return await response.text();
+             } catch(e) {
+                 console.error("Translation failed", e);
+                 return text; // Fallback to original
+             }
+        }
+
+        async function analyzeDraft() {
+             const draft = document.getElementById('aiDraftInput').value;
+             if (!draft) return alert(t('aiDraftDesc'));
+             const btn = document.getElementById('btn-gen-draft');
+             const loader = document.getElementById('aiDraftLoading');
+             const resultBox = document.getElementById('aiDraftResult');
+             
+             // UI Update start
+             const originalText = t('analyze');
+             btn.innerHTML = `<span id="aiDraftLoading" class="loader" style="display:inline-block;"></span> ${t('processing')}`;
+             btn.disabled = true; 
+             resultBox.style.display = 'none';
+
+             try {
+                const response = await fetch('https://text.pollinations.ai/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: [{ role: 'user', content: `Extract a short catchphrase (max 20 chars) and a detailed English image prompt from this text. Return JSON: {"catchphrase":"...","imagePrompt":"..."}\n\n${draft}` }], model: 'openai' })
+                });
+                const text = await response.text();
+                
+                // Robust JSON parsing
+                const match = text.match(/\{[\s\S]*\}/);
+                const jsonStr = match ? match[0] : text;
+                const json = JSON.parse(jsonStr);
+
+                document.getElementById('aiDraftCatchphrase').innerText = json.catchphrase;
+                document.getElementById('aiDraftImagePrompt').innerText = json.imagePrompt;
+                resultBox.style.display = 'flex';
+             } catch(e) { alert("Error: " + e.message); } 
+             finally { 
+                 btn.disabled = false; 
+                 // Restore Button
+                 btn.innerHTML = `<span id="aiDraftLoading" class="loader" style="display:none;"></span> ${originalText}`;
+             }
+        }
+        
+        // Helper to transfer prompt to image tab
+        function useDraftImagePrompt() { 
+            const prompt = document.getElementById('aiDraftImagePrompt').textContent;
+            if(!prompt) return;
+            document.getElementById('aiImagePrompt').value = prompt; 
+            switchAiTab('image'); 
+        }
+
+        async function generateAiImage() {
+             let prompt = document.getElementById('aiImagePrompt').value;
+             if (!prompt) return alert("Please enter a prompt");
+             const btn = document.getElementById('btn-gen-image');
+             const loader = document.getElementById('aiImageLoading');
+             const preview = document.getElementById('aiImagePreview');
+             const addBtn = document.getElementById('btn-add-canvas');
+             
+             // UI Update
+             const originalText = t('generate');
+             btn.innerHTML = `<span id="aiImageLoading" class="loader" style="display:inline-block;"></span> ${t('processing')}`;
+             btn.disabled = true;
+             
+             // Translate if needed
+             prompt = await translateToEnglish(prompt);
+
+             // Add Style
+             const style = document.getElementById('aiImageStyle').value;
+             if (style) {
+                 prompt += `, ${style}`;
+             }
+             
+             // Aspect Ratio
+             const aspect = document.getElementById('aiImageAspect').value; // "16:9"
+             const [wRatio, hRatio] = aspect.split(':').map(Number);
+             // Base size logic: max dimension 1024
+             let w, h;
+             if (wRatio > hRatio) { w = 1024; h = Math.round(1024 * (hRatio/wRatio)); }
+             else { h = 1024; w = Math.round(1024 * (wRatio/hRatio)); }
+
+             const seed = Math.floor(Math.random()*1000000);
+             const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
+             const img = new Image();
+             img.crossOrigin = "Anonymous";
+             img.onload = () => { 
+                 lastGeneratedImageUrl = url; 
+                 preview.innerHTML = `<img src="${url}">`; 
+                 addBtn.style.display='block'; 
+                 btn.disabled=false; 
+                 btn.innerHTML = `<span id="aiImageLoading" class="loader" style="display:none;"></span> ${originalText}`;
+             };
+             img.onerror = () => { 
+                 alert("Error loading image"); 
+                 btn.disabled=false; 
+                 btn.innerHTML = `<span id="aiImageLoading" class="loader" style="display:none;"></span> ${originalText}`;
+             };
+             img.src = url;
+        }
+        function addGeneratedImageToCanvas() { if(lastGeneratedImageUrl){ addImageToCanvas(lastGeneratedImageUrl); closeModal('aiModal'); } }
+        
+        function loadVideo(input) {
+            if (!input.files[0]) return;
+            videoFile = input.files[0];
+            const url = URL.createObjectURL(videoFile);
+            videoEl.src = url;
+            videoEl.style.display = 'block';
+            document.getElementById('videoPlaceholder').style.display = 'none';
+            document.getElementById('gifControls').style.display = 'flex';
+            document.getElementById('gifControls').style.opacity = '1';
+            document.getElementById('gifControls').style.pointerEvents = 'auto';
+
+            videoEl.onloadedmetadata = () => {
+                gifRange.end = videoEl.duration;
+                updateTimelineUI();
+            };
+        }
+
+        // Timeline Logic
+        const timelineContainer = document.getElementById('timelineContainer');
+        const thumbStart = document.getElementById('thumbStart');
+        const thumbEnd = document.getElementById('thumbEnd');
+        const timelineFill = document.getElementById('timelineFill');
+        let isDraggingStart = false;
+        let isDraggingEnd = false;
+
+        function updateTimelineUI() {
+            const total = videoEl.duration || 1;
+            // Clamp
+            if(gifRange.start < 0) gifRange.start = 0;
+            if(gifRange.end > total) gifRange.end = total;
+            if(gifRange.start >= gifRange.end) gifRange.start = gifRange.end - 0.1;
+
+            const startPct = (gifRange.start / total) * 100;
+            const endPct = (gifRange.end / total) * 100;
+            
+            thumbStart.style.left = startPct + '%';
+            thumbEnd.style.left = endPct + '%';
+            timelineFill.style.left = startPct + '%';
+            timelineFill.style.width = (endPct - startPct) + '%';
+            
+            document.getElementById('timeDisplay').innerText = 
+                `${gifRange.start.toFixed(1)}s - ${gifRange.end.toFixed(1)}s (Duration: ${(gifRange.end - gifRange.start).toFixed(1)}s)`;
+        }
+
+        function handleDrag(e) {
+            if (!videoEl.duration) return;
+            const rect = timelineContainer.getBoundingClientRect();
+            let x = (e.clientX || e.touches[0].clientX) - rect.left;
+            let pct = x / rect.width;
+            if(pct < 0) pct = 0; if(pct > 1) pct = 1;
+            const time = pct * videoEl.duration;
+
+            if (isDraggingStart) {
+                if (time < gifRange.end - 0.5) gifRange.start = time;
+            } else if (isDraggingEnd) {
+                if (time > gifRange.start + 0.5) gifRange.end = time;
+            }
+            updateTimelineUI();
+        }
+
+        // Mouse/Touch Events for Timeline
+        thumbStart.addEventListener('mousedown', (e) => { isDraggingStart = true; e.preventDefault(); });
+        thumbStart.addEventListener('touchstart', (e) => { isDraggingStart = true; e.preventDefault(); });
+        
+        thumbEnd.addEventListener('mousedown', (e) => { isDraggingEnd = true; e.preventDefault(); });
+        thumbEnd.addEventListener('touchstart', (e) => { isDraggingEnd = true; e.preventDefault(); });
+        
+        window.addEventListener('mousemove', (e) => { if(isDraggingStart || isDraggingEnd) handleDrag(e); });
+        window.addEventListener('touchmove', (e) => { if(isDraggingStart || isDraggingEnd) handleDrag(e); });
+        
+        window.addEventListener('mouseup', () => { isDraggingStart = false; isDraggingEnd = false; });
+        window.addEventListener('touchend', () => { isDraggingStart = false; isDraggingEnd = false; });
+
+        function previewVideoSegment() {
+            const playhead = document.getElementById('timelinePlayhead');
+            playhead.style.display = 'block'; // Show playhead
+            
+            videoEl.currentTime = gifRange.start;
+            videoEl.play();
+            
+            // Clear any existing interval to avoid duplicates
+            if (window.previewInterval) clearInterval(window.previewInterval);
+
+            window.previewInterval = setInterval(() => {
+                const total = videoEl.duration || 1;
+                const current = videoEl.currentTime;
+                
+                // Update playhead position
+                const pct = (current / total) * 100;
+                playhead.style.left = pct + '%';
+
+                if (current >= gifRange.end) {
+                    videoEl.pause();
+                    clearInterval(window.previewInterval);
+                    playhead.style.display = 'none'; // Hide when done
+                }
+            }, 50); // Faster update for smoothness
+        }
+
+        async function createGif() {
+            const btn = document.getElementById('createGifBtn');
+            const status = document.getElementById('gifStatus');
+            const progress = document.querySelector('.loading-progress');
+            const bar = document.getElementById('gifProgress');
+            const resultArea = document.getElementById('result-area');
+            
+            if (!videoFile) return alert("Select video first");
+            
+            btn.disabled = true;
+            status.style.display = 'block';
+            status.innerText = t('processing');
+            bar.style.display = 'block';
+            progress.style.width = '0%';
+            resultArea.style.display = 'none';
+
+            const fps = parseInt(document.getElementById('fpsSelect').value);
+            const aspectType = document.getElementById('gifAspectSelect').value;
+            const duration = gifRange.end - gifRange.start;
+            
+            // Base Width for Performance
+            const baseWidth = 300; 
+            let targetWidth = baseWidth;
+            let targetHeight;
+
+            const vw = videoEl.videoWidth;
+            const vh = videoEl.videoHeight;
+            const sourceRatio = vw / vh;
+
+            // Determine Target Size
+            if (aspectType === '1:1') {
+                targetHeight = baseWidth;
+            } else if (aspectType === '16:9') {
+                targetHeight = Math.round(baseWidth * (9 / 16));
+            } else {
+                // original
+                targetHeight = Math.round(baseWidth / sourceRatio);
+            }
+            
+            // Calculate Crop Parameters (Center Crop / Object-fit: cover)
+            let sx, sy, sWidth, sHeight;
+            const targetRatio = targetWidth / targetHeight;
+
+            if (sourceRatio > targetRatio) {
+                // Source is wider -> Crop sides
+                sHeight = vh;
+                sWidth = vh * targetRatio;
+                sy = 0;
+                sx = (vw - sWidth) / 2;
+            } else {
+                // Source is taller -> Crop top/bottom
+                sWidth = vw;
+                sHeight = vw / targetRatio;
+                sx = 0;
+                sy = (vh - sHeight) / 2;
+            }
+            
+            // Worker workaround
+            let workerUrl = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
+            try {
+                const response = await fetch(workerUrl);
+                const blob = await response.blob();
+                workerUrl = URL.createObjectURL(blob);
+            } catch (e) {
+                console.warn('Worker fetch failed, trying direct URL (might fail due to CORS/Security)', e);
+            }
+
+            const gif = new GIF({
+                workers: 2,
+                quality: 10,
+                width: targetWidth,
+                height: targetHeight,
+                workerScript: workerUrl
+            });
+
+            // Canvas for extraction
+            const canvas = document.createElement('canvas');
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const ctx = canvas.getContext('2d');
+
+            const step = 1 / fps;
+            let currentTime = gifRange.start;
+            
+            // Frame Extraction Loop
+            const extractFrame = async () => {
+                return new Promise((resolve) => {
+                    videoEl.currentTime = currentTime;
+                    videoEl.onseeked = () => {
+                        // Draw with crop
+                        ctx.drawImage(videoEl, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
+                        gif.addFrame(ctx, {copy: true, delay: 1000 / fps});
+                        resolve();
+                    };
+                });
+            };
+
+            while (currentTime <= gifRange.end) {
+                await extractFrame();
+                currentTime += step;
+                const pct = ((currentTime - gifRange.start) / duration) * 100;
+                progress.style.width = Math.min(pct, 100) + '%';
+            }
+            
+            status.innerText = t('rendering');
+
+            gif.on('finished', (blob) => {
+                const url = URL.createObjectURL(blob);
+                document.getElementById('result-img').src = url;
+                const dlLink = document.getElementById('downloadGifLink');
+                dlLink.href = url;
+                dlLink.download = getFormattedFileName('gif');
+                
+                resultArea.style.display = 'block';
+                status.style.display = 'none';
+                bar.style.display = 'none';
+                btn.disabled = false;
+            });
+
+            gif.render();
+        }
+
+        // --- Init ---
+        setTimeout(fitCanvasToScreen, 100);
+        
+        // --- Mode Init ---
+        function setMode(mode) {
+             if (mode === 'static') {
+                document.getElementById('btn-mode-static').classList.add('active');
+                document.getElementById('btn-mode-gif').classList.remove('active');
+                document.getElementById('static-area').style.display = 'flex';
+                document.getElementById('gif-area').style.display = 'none';
+                document.getElementById('static-controls').style.display = 'flex';
+                document.getElementById('top-menu-container').style.display = 'flex';
+                window.requestAnimationFrame(fitCanvasToScreen);
+            } else {
+                document.getElementById('btn-mode-gif').classList.add('active');
+                document.getElementById('btn-mode-static').classList.remove('active');
+                document.getElementById('static-area').style.display = 'none';
+                document.getElementById('gif-area').style.display = 'flex';
+                document.getElementById('static-controls').style.display = 'none';
+                document.getElementById('top-menu-container').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
