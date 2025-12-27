@@ -378,7 +378,7 @@
 
         .font-list { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
         .font-item { padding: 10px; border: 1px solid #eee; border-radius: 6px; font-size: 14px; cursor: pointer; text-align: center; background: #fafafa; }
-        .font-item:hover { background: #eee; }
+        .font-item:hover { background: #eee; border-color: var(--primary); color: var(--primary); }
 
         /* AI Modal Styles */
         .ai-tabs { display: flex; gap: 5px; padding: 10px 15px 0 15px; border-bottom: 1px solid #eee; }
@@ -640,14 +640,8 @@
     <div id="fontModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-title" data-t="fontTitle">Select Font</div>
-            <div class="font-list">
-                <div class="font-item" style="font-family: 'Noto Sans JP';" onclick="changeFont('Noto Sans JP')">Gothic (Sans)</div>
-                <div class="font-item" style="font-family: 'Noto Serif JP';" onclick="changeFont('Noto Serif JP')">Mincho (Serif)</div>
-                <div class="font-item" style="font-family: 'Potta One';" onclick="changeFont('Potta One')">Pop</div>
-                <div class="font-item" style="font-family: 'DotGothic16';" onclick="changeFont('DotGothic16')">Dot/Pixel</div>
-                <div class="font-item" style="font-family: 'Yusei Magic';" onclick="changeFont('Yusei Magic')">Handwritten</div>
-                <div class="font-item" style="font-family: 'Kaisei Opti';" onclick="changeFont('Kaisei Opti')">Modern Serif</div>
-            </div>
+            <!-- Font list is now generated dynamically -->
+            <div class="font-list" id="fontListContainer"></div>
             <div class="btn-group"><button class="btn-secondary" onclick="closeModal('fontModal')" data-t="close">Close</button></div>
         </div>
     </div>
@@ -745,13 +739,6 @@
                             <option value="cyberpunk, neon lights, futuristic" data-t="styleCyber">Cyberpunk</option>
                         </select>
                     </div>
-
-                    <!-- Added Checkbox for No Text -->
-                    <div style="display:flex; align-items:center; gap:5px; margin-bottom:5px;">
-                        <input type="checkbox" id="aiNoText" checked>
-                        <label for="aiNoText" style="font-size:12px; color:#555; cursor:pointer;" data-t="noText">No Text (Avoid letters)</label>
-                    </div>
-
                     <textarea class="ai-textarea" id="aiImagePrompt" placeholder="e.g. A cafe by the sea, coffee"></textarea>
                     <div class="ai-image-preview" id="aiImagePreview"><span data-t="preview">Preview</span></div>
                     <button class="ai-generate-btn" id="btn-gen-image" onclick="generateAiImage()">
@@ -863,11 +850,10 @@
                 style3d: "3D Render",
                 stylePixel: "Pixel Art",
                 styleCyber: "Cyberpunk",
-                noText: "No Text (Avoid letters)",
                 generate: "Generate",
                 addToCanvas: "Add to Canvas",
                 transTitle: "Magic Eraser Settings",
-                threshold: "Threshold:",
+                threshold: "許容値:",
                 transDesc: "Adjusts how much similar color to remove.",
                 processing: "Processing...",
                 rendering: "Rendering..."
@@ -953,7 +939,6 @@
                 style3d: "3D CG",
                 stylePixel: "ドット絵",
                 styleCyber: "サイバーパンク",
-                noText: "文字を入れない (文字化け回避)",
                 generate: "生成する",
                 addToCanvas: "キャンバスに追加",
                 transTitle: "透明化(スポイト)設定",
@@ -964,6 +949,16 @@
             }
         };
 
+        // Font Definitions
+        const FONT_OPTIONS = [
+            { family: 'Noto Sans JP', labelEn: 'Gothic (Sans)', labelJa: 'ゴシック体 (標準)' },
+            { family: 'Noto Serif JP', labelEn: 'Mincho (Serif)', labelJa: '明朝体' },
+            { family: 'Potta One', labelEn: 'Pop', labelJa: 'ポップ体 (Potta)' },
+            { family: 'DotGothic16', labelEn: 'Dot/Pixel', labelJa: 'ドット文字' },
+            { family: 'Yusei Magic', labelEn: 'Handwritten', labelJa: '手書き風 (油性)' },
+            { family: 'Kaisei Opti', labelEn: 'Modern Serif', labelJa: 'モダン明朝' }
+        ];
+
         let currentLang = 'ja'; // Default Language
 
         function t(key) {
@@ -973,6 +968,7 @@
         function toggleLanguage() {
             currentLang = currentLang === 'en' ? 'ja' : 'en';
             updateAllTexts();
+            renderFontList(); // Re-render fonts with new language
         }
 
         function updateAllTexts() {
@@ -1783,12 +1779,36 @@
             }
         }
 
-        function openFontModal() { document.getElementById('fontModal').style.display = 'flex'; }
+        function openFontModal() { 
+            renderFontList();
+            document.getElementById('fontModal').style.display = 'flex'; 
+        }
+
+        function renderFontList() {
+            const container = document.getElementById('fontListContainer');
+            container.innerHTML = ''; // Clear
+
+            FONT_OPTIONS.forEach(opt => {
+                const div = document.createElement('div');
+                div.className = 'font-item';
+                div.style.fontFamily = opt.family;
+                div.innerText = currentLang === 'en' ? opt.labelEn : opt.labelJa;
+                div.onclick = () => changeFont(opt.family);
+                container.appendChild(div);
+            });
+        }
         
         function changeFont(f) {
             const o = canvas.getActiveObject();
-            if(o && o.set) { o.set('fontFamily', f); canvas.renderAll(); closeModal('fontModal'); }
+            if(o && o.set) { 
+                o.set('fontFamily', f); 
+                o.set('dirty', true); // Ensure render dirty flag
+                canvas.requestRenderAll(); 
+                closeModal('fontModal'); 
+                saveHistory();
+            }
         }
+
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function openSaveModal() { document.getElementById('saveModal').style.display = 'flex'; }
         function openTransModal() { document.getElementById('transModal').style.display = 'flex'; }
@@ -2104,15 +2124,11 @@
              btn.disabled = true; 
              resultBox.style.display = 'none';
 
-             const instruction = currentLang === 'ja' 
-                ? "Extract a short catchphrase (max 20 chars) in Japanese and a detailed English image prompt from this text." 
-                : "Extract a short catchphrase (max 20 chars) in English and a detailed English image prompt from this text.";
-
              try {
                 const response = await fetch('https://text.pollinations.ai/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: [{ role: 'user', content: `${instruction} Return JSON: {"catchphrase":"...","imagePrompt":"..."}\n\n${draft}` }], model: 'openai' })
+                    body: JSON.stringify({ messages: [{ role: 'user', content: `Extract a short catchphrase (max 20 chars) and a detailed English image prompt from this text. Return JSON: {"catchphrase":"...","imagePrompt":"..."}\n\n${draft}` }], model: 'openai' })
                 });
                 const text = await response.text();
                 
@@ -2160,12 +2176,6 @@
              const style = document.getElementById('aiImageStyle').value;
              if (style) {
                  prompt += `, ${style}`;
-             }
-
-             // Add No Text instruction
-             const noText = document.getElementById('aiNoText').checked;
-             if (noText) {
-                 prompt += ", no text, no letters, no watermark, clean image";
              }
              
              // Aspect Ratio
@@ -2420,8 +2430,9 @@
         // --- Init ---
         updateAllTexts(); // Apply translations immediately
         setTimeout(fitCanvasToScreen, 100);
+        renderFontList();
         
-        // --- Mode Init ---
+        // --- Mode Init ---\r
         function setMode(mode) {
              if (mode === 'static') {
                 document.getElementById('btn-mode-static').classList.add('active');
