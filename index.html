@@ -739,6 +739,12 @@
                             <option value="cyberpunk, neon lights, futuristic" data-t="styleCyber">Cyberpunk</option>
                         </select>
                     </div>
+                    <div style="display:flex; gap:10px; align-items:center; margin-bottom:5px;">
+                        <label style="font-size:12px; display:flex; align-items:center; cursor:pointer;">
+                            <input type="checkbox" id="aiNoText" checked>
+                            <span data-t="noText" style="margin-left:4px;">Exclude Text</span>
+                        </label>
+                    </div>
                     <textarea class="ai-textarea" id="aiImagePrompt" placeholder="e.g. A cafe by the sea, coffee"></textarea>
                     <div class="ai-image-preview" id="aiImagePreview"><span data-t="preview">Preview</span></div>
                     <button class="ai-generate-btn" id="btn-gen-image" onclick="generateAiImage()">
@@ -847,16 +853,17 @@
                 styleAnime: "Anime Style",
                 styleWater: "Watercolor",
                 styleOil: "Oil Painting",
-                style3d: "3D Render",
+                style3d: "3D CG",
                 stylePixel: "Pixel Art",
                 styleCyber: "Cyberpunk",
                 generate: "Generate",
                 addToCanvas: "Add to Canvas",
                 transTitle: "Magic Eraser Settings",
-                threshold: "許容値:",
+                threshold: "Threshold:",
                 transDesc: "Adjusts how much similar color to remove.",
                 processing: "Processing...",
-                rendering: "Rendering..."
+                rendering: "Rendering...",
+                noText: "Exclude Text"
             },
             ja: {
                 staticMode: "静止画",
@@ -893,7 +900,7 @@
                 front: "前面",
                 back: "背面",
                 delete: "削除",
-                crop: "切り抜く",
+                crop: "トリミング",
                 cancel: "キャンセル",
                 gifTitle: "🎬 GIF変換",
                 selectVideo: "📂 動画選択",
@@ -945,7 +952,8 @@
                 threshold: "許容値:",
                 transDesc: "似た色をどれくらいまとめて消すかを調整します。",
                 processing: "処理中...",
-                rendering: "レンダリング中..."
+                rendering: "レンダリング中...",
+                noText: "文字を含めない"
             }
         };
 
@@ -2178,6 +2186,11 @@
                  prompt += `, ${style}`;
              }
              
+             // Add No Text prompt
+             if (document.getElementById('aiNoText').checked) {
+                prompt += ", no text, textless, no letters, no watermark, no signature";
+             }
+             
              // Aspect Ratio
              const aspect = document.getElementById('aiImageAspect').value; // "16:9"
              const [wRatio, hRatio] = aspect.split(':').map(Number);
@@ -2432,7 +2445,7 @@
         setTimeout(fitCanvasToScreen, 100);
         renderFontList();
         
-        // --- Mode Init ---\r
+        // --- Mode Init ---
         function setMode(mode) {
              if (mode === 'static') {
                 document.getElementById('btn-mode-static').classList.add('active');
