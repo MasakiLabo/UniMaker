@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UniMaker - Bilingual</title>
+    <title>UniMaker - Bilingual (Fixed)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Kaisei+Opti&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Potta+One&family=Yusei+Magic&display=swap" rel="stylesheet">
@@ -28,7 +28,7 @@
             background-color: var(--bg);
             margin: 0;
             padding: 0;
-            overscroll-behavior: none;
+            overscroll-behavior: none; /* Prevent swipe navigation */
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -527,6 +527,8 @@
                 <option value="article" data-t="sizeHalf">Half (1280x350)</option>
                 <option value="icon" selected data-t="sizeIcon">Icon (480x480)</option>
                 <option value="line_stamp" data-t="sizeStamp">Line Stamp (370x320)</option>
+                <option value="fhd" data-t="sizeFHD">Full HD (1920x1006)</option>
+                <option value="banner_slim" data-t="sizeBannerSlim">Banner Slim (1280x216)</option>
             </select>
             
             <button class="save-btn" onclick="openSaveModal()">
@@ -537,11 +539,8 @@
         <button class="lang-btn" onclick="toggleLanguage()">🌐 EN / JP</button>
     </header>
 
-    <!-- NEW TOP MENU (Ribbon Style) -->
     <div id="top-menu-container">
-        <!-- Main Tabs -->
         <div class="main-menu-row" id="mainMenuRow"></div>
-        <!-- Sub Toolbar -->
         <div class="sub-menu-row" id="subMenuRow" style="display: none;"></div>
     </div>
 
@@ -621,32 +620,25 @@
         </div>
     </div>
     
-    <!-- Magnifier Element -->
     <div id="magnifier"><canvas id="magnifierCanvas" width="120" height="120"></canvas></div>
     
-    <!-- Pen Cursor Element -->
     <div id="pen-cursor"></div>
-    <!-- Brush Preview Element -->
     <div id="brush-preview"></div>
 
-    <!-- Hidden Inputs -->
     <input type="file" id="imgLoader" multiple accept="image/*">
     <input type="color" id="bgColorPicker" value="#ffffff">
     <input type="color" id="textColorPicker" value="#000000">
     <input type="color" id="strokeColorPicker" value="#000000">
     <input type="color" id="penColorPicker" value="#000000">
 
-    <!-- Font Modal -->
     <div id="fontModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-title" data-t="fontTitle">Select Font</div>
-            <!-- Font list is now generated dynamically -->
             <div class="font-list" id="fontListContainer"></div>
             <div class="btn-group"><button class="btn-secondary" onclick="closeModal('fontModal')" data-t="close">Close</button></div>
         </div>
     </div>
 
-    <!-- Save Modal -->
     <div id="saveModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-title" data-t="saveTitle">💾 Save Image</div>
@@ -658,7 +650,7 @@
             </button>
             <button class="save-option-btn" onclick="executeSave('jpeg')">
                 <span>JPG</span>
-                <span class="save-desc" data-t="jpgDesc">Photo, Light, No Transparecy</span>
+                <span class="save-desc" data-t="jpgDesc">Photo, Light, No Transparency</span>
             </button>
             <button class="save-option-btn" onclick="executeSave('webp')">
                 <span>WEBP</span>
@@ -669,24 +661,19 @@
         </div>
     </div>
 
-    <!-- AI Modal -->
     <div id="aiModal" class="modal-overlay">
         <div class="modal-content">
-            <!-- Fixed Header -->
             <div style="display:flex; justify-content:space-between; align-items:center; padding: 15px 20px 10px 20px; border-bottom: 1px solid #f0f0f0;">
                 <div class="modal-title" data-t="aiTitle">✨ AI Tools</div>
                 <button class="modal-close-icon" onclick="closeModal('aiModal')">×</button>
             </div>
             
-            <!-- Tabs -->
             <div class="ai-tabs">
                 <div class="ai-tab active" onclick="switchAiTab('draft')" data-t="aiTabDraft">Draft to Design</div>
                 <div class="ai-tab" onclick="switchAiTab('image')" data-t="aiTabImage">Generate Image</div>
             </div>
             
-            <!-- Scrollable Body -->
             <div class="ai-scrollable-area">
-                <!-- Draft Analysis Panel -->
                 <div id="ai-panel-draft" class="ai-panel active">
                     <div class="ai-description" data-t="aiDraftDesc">
                         Enter your article draft, and AI will suggest a catchphrase and an image prompt.
@@ -714,7 +701,6 @@
                     </button>
                 </div>
                 
-                <!-- Image Generation Panel -->
                 <div id="ai-panel-image" class="ai-panel">
                     <div class="ai-description" data-t="aiImgDesc">
                         Describe the image you want. Japanese input is automatically translated.
@@ -757,7 +743,6 @@
         </div>
     </div>
 
-    <!-- Trans Modal (Threshold Setting) -->
     <div id="transModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-title" data-t="transTitle">Magic Eraser Settings</div>
@@ -773,6 +758,16 @@
     </div>
 
     <script>
+        // --- FIX: Extend toObject to include custom properties (isTransparentPen) ---
+        // This ensures transparent lines are saved/loaded correctly in Undo/Redo
+        fabric.Object.prototype.toObject = (function(toObject) {
+            return function() {
+                return fabric.util.object.extend(toObject.call(this), {
+                    isTransparentPen: this.isTransparentPen
+                });
+            };
+        })(fabric.Object.prototype.toObject);
+
         // --- Translations ---
         const TRANSLATIONS = {
             en: {
@@ -782,6 +777,8 @@
                 sizeHalf: "Half (1280x350)",
                 sizeIcon: "Icon (480x480)",
                 sizeStamp: "Line Stamp (370x320)",
+                sizeFHD: "Full HD (1920x1006)",
+                sizeBannerSlim: "Banner Slim (1280x216)",
                 saveImage: "💾 Save Image",
                 select: "Select",
                 pen: "Pen",
@@ -806,6 +803,7 @@
                 noFill: "No Fill",
                 stroke: "Stroke",
                 strokeWidth: "Width",
+                opacity: "Opacity",
                 clone: "Clone",
                 front: "Front",
                 back: "Back",
@@ -835,7 +833,7 @@
                 saveTitle: "💾 Save Image",
                 saveDesc: "Please select a format.",
                 pngDesc: "High Quality, Transparent",
-                jpgDesc: "Photo, Light, No Transparecy",
+                jpgDesc: "Photo, Light, No Transparency",
                 webpDesc: "Modern, Light",
                 aiTitle: "✨ AI Tools",
                 aiTabDraft: "Draft to Design",
@@ -853,9 +851,9 @@
                 styleAnime: "Anime Style",
                 styleWater: "Watercolor",
                 styleOil: "Oil Painting",
-                style3d: "3D Render",
-                stylePixel: "Pixel Art",
-                styleCyber: "Cyberpunk",
+                style3d: "3D CG",
+                stylePixel: "ドット絵",
+                styleCyber: "サイバーパンク",
                 generate: "Generate",
                 addToCanvas: "Add to Canvas",
                 transTitle: "Magic Eraser Settings",
@@ -872,6 +870,8 @@
                 sizeHalf: "ハーフ (1280x350)",
                 sizeIcon: "アイコン (480x480)",
                 sizeStamp: "LINEスタンプ (370x320)",
+                sizeFHD: "フルHD (1920x1006)",
+                sizeBannerSlim: "スリムバナー (1280x216)",
                 saveImage: "💾 画像を保存",
                 select: "選択",
                 pen: "ペン",
@@ -896,6 +896,7 @@
                 noFill: "塗り無し",
                 stroke: "線",
                 strokeWidth: "線幅",
+                opacity: "透明度",
                 clone: "複製",
                 front: "前面",
                 back: "背面",
@@ -1004,7 +1005,9 @@
             header: { w: 1280, h: 670 }, 
             article: { w: 1280, h: 350 }, 
             icon: { w: 480, h: 480 },
-            line_stamp: { w: 370, h: 320 }
+            line_stamp: { w: 370, h: 320 },
+            fhd: { w: 1920, h: 1006 },
+            banner_slim: { w: 1280, h: 216 }
         };
         let currentSizeKey = 'icon'; // Default Icon
         let REAL_WIDTH = SIZES.icon.w;
@@ -1015,7 +1018,8 @@
             height: REAL_HEIGHT,
             backgroundColor: '#ffffff',
             preserveObjectStacking: true,
-            selection: true
+            selection: true,
+            allowTouchScrolling: true
         });
 
         // Config Fabric
@@ -1071,14 +1075,25 @@
 
         function undo() { if(historyIndex > 0) loadHistory(--historyIndex); }
         function redo() { if(historyIndex < stateHistory.length - 1) loadHistory(++historyIndex); }
+        
         function loadHistory(idx) {
+            if(isHistoryLocked) return;
             isHistoryLocked = true;
             canvas.loadFromJSON(stateHistory[idx], () => {
                 canvas.renderAll();
                 isHistoryLocked = false;
+                
+                // Fix: Restore logic for eraser/transparency after undo
                 if(currentMode === 'transparency') setCanvasMode('select');
                 if(currentMode === 'pen') setCanvasMode('pen'); 
+                if(currentMode === 'eraser') toggleTransparentObjectsVisibility(true); // Fix: Ensure visibility
+
+            }, (o, object) => {
+                // Optimization for large histories
+                object.set('renderOnAddRemove', false);
             });
+            // Fallback unlock if callback fails (e.g. image error)
+            setTimeout(() => { isHistoryLocked = false; }, 2000); 
         }
 
         canvas.on('object:added', saveHistory);
@@ -1108,6 +1123,7 @@
                 { id:'bg', icon:'🖌️', label: t('bgColor'), action:()=>document.getElementById('bgColorPicker').click() },
                 { id:'text', icon:'🔤', label: t('addText'), action:addText },
                 { id:'image', icon:'📷', label: t('addImage'), action:()=>document.getElementById('imgLoader').click() },
+                { id:'eraser', icon:'🧹', label: t('delete'), action:()=>setCanvasMode('eraser'), active:currentMode==='eraser' },
                 { id:'undo', icon:'↩️', label: t('undo'), action:undo },
                 { id:'redo', icon:'↪️', label: t('redo'), action:redo },
             ];
@@ -1149,6 +1165,9 @@
                         <input type="range" min="1" max="50" value="${canvas.freeDrawingBrush ? canvas.freeDrawingBrush.width : 5}" oninput="updatePenWidth(this.value)">
                     </div>
                 `;
+            } else if (currentMode === 'eraser') {
+                 showSub = true;
+                 subContent = `<div class="sub-item" style="color:var(--danger); border-color:#ffccc7;">👆 Click objects to delete</div>`;
             } else if (currentMode === 'transparency') {
                 showSub = true;
                 subContent = `
@@ -1178,9 +1197,23 @@
             } else if (activeObj && currentMode === 'select') {
                 // Object Context Menu in Select Mode
                 showSub = true;
+                
+                // Get Opacity (Default to 1 if not set)
+                const currentOpacity = (typeof activeObj.opacity !== 'undefined') ? activeObj.opacity : 1;
+                const opacityVal = Math.round(currentOpacity * 100);
+
+                // Common controls for all selected objects
+                const opacityControl = `
+                    <div class="slider-wrapper-menu" style="margin-left:5px;" title="${t('opacity')}">
+                        <span class="slider-label">${t('opacity')}</span>
+                        <input type="range" min="0" max="100" value="${opacityVal}" oninput="updateOpacity(this.value)">
+                    </div>
+                `;
+
                 if (activeObj.type === 'i-text' || activeObj.type === 'text') {
                     subContent = `
                         <div class="sub-item" onclick="document.getElementById('textColorPicker').click()">🎨 ${t('color')}</div>
+                        ${opacityControl}
                         <div class="sub-item" onclick="openFontModal()">🅰️ Font</div>
                         <div class="sub-item" onclick="cloneObject()">📋 ${t('clone')}</div>
                         <div class="sub-item" onclick="bringFront()">⬆️ ${t('front')}</div>
@@ -1190,13 +1223,14 @@
                 } else if (activeObj.type === 'image') {
                     subContent = `
                         <div class="sub-item" onclick="startCrop()">✂️ ${t('crop')}</div>
+                        ${opacityControl}
                         <div class="sub-item" onclick="cloneObject()">📋 ${t('clone')}</div>
                         <div class="sub-item" onclick="bringFront()">⬆️ ${t('front')}</div>
                         <div class="sub-item" onclick="sendBack()">⬇️ ${t('back')}</div>
                         <div class="sub-item" style="color:var(--danger); border-color:#ffccc7;" onclick="deleteSelected()">🗑️ ${t('delete')}</div>
                     `;
                 } else {
-                    // Path/Shape Objects (Updated for Color/Stroke control)
+                    // Path/Shape Objects
                       subContent = `
                         <div class="sub-item" onclick="document.getElementById('textColorPicker').click()">🎨 ${t('fill')}</div>
                         <div class="sub-item" onclick="setShapeFillTransparent()">🚫 ${t('noFill')}</div>
@@ -1205,6 +1239,7 @@
                             <span class="slider-label">${t('strokeWidth')}</span>
                             <input type="range" min="0" max="20" value="${activeObj.strokeWidth || 0}" oninput="updateStrokeWidth(this.value)">
                         </div>
+                        ${opacityControl}
                         <div class="sub-item" onclick="cloneObject()">📋 ${t('clone')}</div>
                         <div class="sub-item" onclick="bringFront()">⬆️ ${t('front')}</div>
                         <div class="sub-item" onclick="sendBack()">⬇️ ${t('back')}</div>
@@ -1228,7 +1263,8 @@
             const commonOpts = {
                 strokeUniform: true, // Prevents stroke from scaling
                 strokeWidth: 0,
-                stroke: 'transparent'
+                stroke: 'transparent',
+                opacity: 1
             };
 
             let obj;
@@ -1300,7 +1336,7 @@
 
         // --- Mode Switching Logic ---
         function setCanvasMode(mode) {
-            // Reset trans visibility
+            // Reset trans visibility if leaving eraser
             if (currentMode === 'eraser' && mode !== 'eraser') {
                 toggleTransparentObjectsVisibility(false);
             }
@@ -1315,7 +1351,7 @@
             canvas.off('mouse:move', pickColorMove);
             canvas.off('mouse:up', pickColorEnd);
             canvas.off('mouse:out', hideMagnifier); 
-            canvas.off('mouse:down', eraserClick); // Remove eraser click handler if exists
+            canvas.off('mouse:down', eraserClick); 
 
             document.getElementById('magnifier').style.display = 'none';
             document.getElementById('pen-cursor').style.display = 'none'; 
@@ -1324,9 +1360,9 @@
                 canvas.isDrawingMode = true;
                 const brush = new fabric.PencilBrush(canvas);
                 brush.width = 5;
-                // Set color based on transparency mode
+                // Fix: Use visible red color while drawing for transparent pen
                 if (isPenTransparent) {
-                    brush.color = "rgba(255,255,255,1)"; // Dummy color for drawing, will become transparent later
+                    brush.color = "rgba(255,0,0,0.5)"; 
                 } else {
                     brush.color = document.getElementById('penColorPicker').value;
                 }
@@ -1457,6 +1493,17 @@
                 saveHistory();
             }
         }
+        
+        // --- Opacity Update ---
+        function updateOpacity(val) {
+            const o = canvas.getActiveObject();
+            if (o) {
+                const opacity = parseInt(val, 10) / 100;
+                o.set('opacity', opacity);
+                canvas.renderAll();
+                saveHistory();
+            }
+        }
 
         canvas.on('path:created', function(opt) {
             // Check if pen transparency is active
@@ -1512,13 +1559,23 @@
             const canvasZoom = canvas.getZoom(); // Added for fix
             
             // Fix: calculate source pixel using current canvas zoom
-            const sx = (pointer.x * canvasZoom * ratio) - (w / 2 / zoom);
-            const sy = (pointer.y * canvasZoom * ratio) - (h / 2 / zoom);
+            let sx = (pointer.x * canvasZoom * ratio) - (w / 2 / zoom);
+            let sy = (pointer.y * canvasZoom * ratio) - (h / 2 / zoom);
+            
+            // Clamp coordinates to prevent errors
+            sx = Math.max(0, sx);
+            sy = Math.max(0, sy);
             
             ctx.clearRect(0, 0, w, h);
             ctx.fillStyle = "white";
             ctx.fillRect(0,0,w,h);
-            ctx.drawImage(mainEl, sx, sy, w/zoom, h/zoom, 0, 0, w, h);
+            
+            // Protect against out of bounds
+            try {
+                 ctx.drawImage(mainEl, sx, sy, w/zoom, h/zoom, 0, 0, w, h);
+            } catch(e) {
+                // Ignore draw error if near edge
+            }
             
             ctx.strokeStyle = 'rgba(255,0,0,0.8)';
             ctx.lineWidth = 1;
@@ -1555,14 +1612,13 @@
         
         function updatePenCursorSize() {
             const cursor = document.getElementById('pen-cursor');
-            if (cursor.style.display === 'block') {
-                 const rect = canvas.getElement().getBoundingClientRect();
-                 const visualScale = rect.width / canvas.width;
-                 const finalSize = (canvas.freeDrawingBrush.width || 5) * visualScale;
+            // Allow updating even if display is none (for slider interaction)
+            const rect = canvas.getElement().getBoundingClientRect();
+            const visualScale = rect.width / canvas.width;
+            const finalSize = (canvas.freeDrawingBrush.width || 5) * visualScale;
                  
-                 cursor.style.width = finalSize + 'px';
-                 cursor.style.height = finalSize + 'px';
-            }
+            cursor.style.width = finalSize + 'px';
+            cursor.style.height = finalSize + 'px';
         }
 
         function hidePenCursor() {
@@ -1579,7 +1635,13 @@
             const canvasZoom = canvas.getZoom(); // Added for fix
             
             // Fix: calculate pixel using current canvas zoom
-            const pixel = ctx.getImageData(pointer.x * canvasZoom * ratio, pointer.y * canvasZoom * ratio, 1, 1).data;
+            // Clamp values to prevent index size errors
+            let x = pointer.x * canvasZoom * ratio;
+            let y = pointer.y * canvasZoom * ratio;
+            x = Math.max(0, Math.min(x, canvas.width * ratio - 1));
+            y = Math.max(0, Math.min(y, canvas.height * ratio - 1));
+
+            const pixel = ctx.getImageData(x, y, 1, 1).data;
 
             if(pixel[3]===0 && !canvas.backgroundColor) return null; 
             
@@ -1900,7 +1962,9 @@
         window.addEventListener('keydown', (e) => {
             if(['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
             if(e.key==='Delete' || e.key==='Backspace') {
-                const o = canvas.getActiveObject(); if(o && !o.isEditing) { e.preventDefault(); deleteSelected(); }
+                const o = canvas.getActiveObject(); 
+                // Fix: Check if object is currently being edited (IText)
+                if(o && !o.isEditing) { e.preventDefault(); deleteSelected(); }
             }
             if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z') {
                 e.preventDefault(); e.shiftKey ? redo() : undo();
@@ -1943,12 +2007,24 @@
         // Crop (Simplified)
         let isCropping=false, cropRect, cropImg;
         
+        function getSafeBoundingBox(obj) {
+            obj.setCoords();
+            const ac = obj.aCoords;
+            const points = [ac.tl, ac.tr, ac.br, ac.bl];
+            return {
+                left: Math.min(...points.map(p => p.x)),
+                top: Math.min(...points.map(p => p.y)),
+                width: Math.max(...points.map(p => p.x)) - Math.min(...points.map(p => p.x)),
+                height: Math.max(...points.map(p => p.y)) - Math.min(...points.map(p => p.y))
+            };
+        }
+
         // --- Crop Constraint Helper ---
         function constrainCrop(opt) {
             const target = opt.target;
             if (!isCropping || target !== cropRect || !cropImg) return;
 
-            const imgB = cropImg.getBoundingRect();
+            const imgB = getSafeBoundingBox(cropImg);
             
             // Current Target State
             let top = target.top;
@@ -1960,6 +2036,7 @@
 
             // 1. Size constraint
             let modified = false;
+            // Add slight buffer to avoid floating point fighting
             if (width > imgB.width + 1) {
                 scaleX = imgB.width / target.width;
                 width = imgB.width;
@@ -1999,30 +2076,17 @@
             canvas.discardActiveObject();
             canvas.forEachObject(obj => obj.selectable = false);
             
-            // Get accurate image area
-            let left, top, width, height;
-            
-            if (Math.abs(o.angle % 360) < 0.1) {
-                const p = o.getPointByOrigin('left', 'top');
-                left = p.x;
-                top = p.y;
-                width = o.getScaledWidth();
-                height = o.getScaledHeight();
-            } else {
-                const b = o.getBoundingRect();
-                left = b.left;
-                top = b.top;
-                width = b.width;
-                height = b.height;
-            }
+            // Get accurate image area using manual calculation for consistency across zooms/rotations
+            const b = getSafeBoundingBox(o);
             
             const strokeW = 2;
             
+            // Initialize Rect exactly matching the visual bounding box
             cropRect = new fabric.Rect({ 
-                left: left + strokeW/2, 
-                top: top + strokeW/2, 
-                width: width - strokeW, 
-                height: height - strokeW, 
+                left: b.left, 
+                top: b.top, 
+                width: b.width, 
+                height: b.height, 
                 fill: 'rgba(0,0,0,0)', 
                 stroke: '#d35400', 
                 strokeWidth: strokeW, 
@@ -2032,7 +2096,9 @@
                 cornerColor: '#d35400',
                 lockRotation: true, 
                 hasRotatingPoint: false,
-                strokeUniform: true 
+                strokeUniform: true,
+                scaleX: 1,
+                scaleY: 1
             });
             
             canvas.add(cropRect); 
@@ -2052,18 +2118,59 @@
         function performCrop() {
             const r = cropRect.getBoundingRect();
             
+            // 1. Hide Crop Rect
             cropRect.visible = false;
+            
+            // 2. Hide all other objects temporarily to avoid capturing them
+            //    We only want to capture the target image
+            const originalVisibility = [];
+            const originalBg = canvas.backgroundColor;
+            
+            // Disable BG
+            canvas.backgroundColor = null;
+            
+            canvas.getObjects().forEach(obj => {
+                originalVisibility.push({obj: obj, visible: obj.visible});
+                // Hide everything except the target image
+                if (obj !== cropImg) {
+                    obj.visible = false;
+                }
+            });
+            
             canvas.renderAll();
 
-            const url = canvas.toDataURL({ left:r.left, top:r.top, width:r.width, height:r.height, format:'png', multiplier:1 });
+            // 3. Capture only the image area
+            // Use current zoom to ensure high quality capture if zoomed in, or reset zoom if needed.
+            // For simplicity and consistency, we capture what is seen.
+            const url = canvas.toDataURL({ 
+                left: r.left, 
+                top: r.top, 
+                width: r.width, 
+                height: r.height, 
+                format: 'png', 
+                multiplier: 1 / canvas.getZoom() // Cancel out zoom to get 1:1 pixel mapping relative to canvas logic coords
+            });
             
+            // 4. Restore visibility
+            canvas.backgroundColor = originalBg;
+            originalVisibility.forEach(v => {
+                v.obj.visible = v.visible;
+            });
+
+            // 5. Create new image from capture
             fabric.Image.fromURL(url, (img) => {
-                img.set({left:r.left, top:r.top});
+                img.set({
+                    left: r.left, 
+                    top: r.top
+                });
+                
                 canvas.remove(cropImg); 
                 canvas.remove(cropRect);
                 canvas.add(img); 
                 canvas.setActiveObject(img);
+                
                 endCrop();
+                saveHistory(); // Save state
             });
         }
         
@@ -2289,14 +2396,15 @@
         }
 
         // Mouse/Touch Events for Timeline
+        // Added {passive: false} to prevent scrolling while dragging
         thumbStart.addEventListener('mousedown', (e) => { isDraggingStart = true; e.preventDefault(); });
-        thumbStart.addEventListener('touchstart', (e) => { isDraggingStart = true; e.preventDefault(); });
+        thumbStart.addEventListener('touchstart', (e) => { isDraggingStart = true; e.preventDefault(); }, {passive: false});
         
         thumbEnd.addEventListener('mousedown', (e) => { isDraggingEnd = true; e.preventDefault(); });
-        thumbEnd.addEventListener('touchstart', (e) => { isDraggingEnd = true; e.preventDefault(); });
+        thumbEnd.addEventListener('touchstart', (e) => { isDraggingEnd = true; e.preventDefault(); }, {passive: false});
         
         window.addEventListener('mousemove', (e) => { if(isDraggingStart || isDraggingEnd) handleDrag(e); });
-        window.addEventListener('touchmove', (e) => { if(isDraggingStart || isDraggingEnd) handleDrag(e); });
+        window.addEventListener('touchmove', (e) => { if(isDraggingStart || isDraggingEnd) handleDrag(e); }, {passive: false});
         
         window.addEventListener('mouseup', () => { isDraggingStart = false; isDraggingEnd = false; });
         window.addEventListener('touchend', () => { isDraggingStart = false; isDraggingEnd = false; });
@@ -2454,7 +2562,7 @@
         setTimeout(fitCanvasToScreen, 100);
         renderFontList();
         
-        // --- Mode Init ---
+        // --- Mode Init ---\
         function setMode(mode) {
              if (mode === 'static') {
                 document.getElementById('btn-mode-static').classList.add('active');
@@ -2463,6 +2571,11 @@
                 document.getElementById('gif-area').style.display = 'none';
                 document.getElementById('static-controls').style.display = 'flex';
                 document.getElementById('top-menu-container').style.display = 'flex';
+                // Stop video if playing
+                videoEl.pause();
+                if (window.previewInterval) clearInterval(window.previewInterval);
+                document.getElementById('timelinePlayhead').style.display = 'none';
+
                 window.requestAnimationFrame(fitCanvasToScreen);
             } else {
                 document.getElementById('btn-mode-gif').classList.add('active');
