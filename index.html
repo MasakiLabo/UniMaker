@@ -166,6 +166,11 @@
             border-bottom-color: var(--primary);
             background: #f9fff9;
         }
+        .menu-item.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+            cursor: default;
+        }
         .menu-icon { font-size: 20px; margin-bottom: 4px; display:flex; align-items:center; justify-content:center; }
         .menu-icon svg { width: 20px; height: 20px; }
 
@@ -759,10 +764,10 @@
 
     <script>
         // --- FIX: Extend toObject to include custom properties (isTransparentPen) ---
-        // This ensures transparent lines are saved/loaded correctly in Undo/Redo
+        // CRITICAL FIX: Ensure 'toObject' accepts 'propertiesToInclude' argument so Fabric.js cloning works
         fabric.Object.prototype.toObject = (function(toObject) {
-            return function() {
-                return fabric.util.object.extend(toObject.call(this), {
+            return function(propertiesToInclude) {
+                return fabric.util.object.extend(toObject.call(this, propertiesToInclude), {
                     isTransparentPen: this.isTransparentPen
                 });
             };
@@ -1065,16 +1070,26 @@
             if (historyIndex < stateHistory.length - 1) {
                 stateHistory = stateHistory.slice(0, historyIndex + 1);
             }
-            stateHistory.push(JSON.stringify(canvas));
+            const json = JSON.stringify(canvas);
+            stateHistory.push(json);
             if (stateHistory.length > 20) {
                 stateHistory.shift();
             } else {
                 historyIndex++;
             }
+            renderTopMenu(); // Update Undo/Redo button states
         }
 
-        function undo() { if(historyIndex > 0) loadHistory(--historyIndex); }
-        function redo() { if(historyIndex < stateHistory.length - 1) loadHistory(++historyIndex); }
+        function undo() { 
+            if(historyIndex > 0 && !isHistoryLocked) {
+                loadHistory(--historyIndex); 
+            }
+        }
+        function redo() { 
+            if(historyIndex < stateHistory.length - 1 && !isHistoryLocked) {
+                loadHistory(++historyIndex); 
+            }
+        }
         
         function loadHistory(idx) {
             if(isHistoryLocked) return;
@@ -1087,6 +1102,8 @@
                 if(currentMode === 'transparency') setCanvasMode('select');
                 if(currentMode === 'pen') setCanvasMode('pen'); 
                 if(currentMode === 'eraser') toggleTransparentObjectsVisibility(true); // Fix: Ensure visibility
+                
+                renderTopMenu(); // Refresh buttons
 
             }, (o, object) => {
                 // Optimization for large histories
@@ -1099,6 +1116,8 @@
         canvas.on('object:added', saveHistory);
         canvas.on('object:modified', saveHistory);
         canvas.on('object:removed', saveHistory);
+        
+        // Initial save
         saveHistory();
 
         // --- Menu Rendering Logic ---
@@ -1112,6 +1131,10 @@
             subRow.style.display = 'none';
             mainRow.className = 'main-menu-row'; 
 
+            // Calc undo/redo state
+            const canUndo = historyIndex > 0;
+            const canRedo = historyIndex < stateHistory.length - 1;
+
             // Main Menu Tabs
             const mainItems = [
                 { id:'select', icon:'👆', label: t('select'), action:()=>setCanvasMode('select'), active:currentMode==='select' },
@@ -1124,13 +1147,13 @@
                 { id:'text', icon:'🔤', label: t('addText'), action:addText },
                 { id:'image', icon:'📷', label: t('addImage'), action:()=>document.getElementById('imgLoader').click() },
                 { id:'eraser', icon:'🧹', label: t('delete'), action:()=>setCanvasMode('eraser'), active:currentMode==='eraser' },
-                { id:'undo', icon:'↩️', label: t('undo'), action:undo },
-                { id:'redo', icon:'↪️', label: t('redo'), action:redo },
+                { id:'undo', icon:'↩️', label: t('undo'), action:undo, disabled: !canUndo },
+                { id:'redo', icon:'↪️', label: t('redo'), action:redo, disabled: !canRedo },
             ];
 
             mainItems.forEach(item => {
                 const div = document.createElement('div');
-                div.className = `menu-item ${item.active ? 'active' : ''}`;
+                div.className = `menu-item ${item.active ? 'active' : ''} ${item.disabled ? 'disabled' : ''}`;
                 div.onclick = item.action;
                 // Check if icon is SVG string or emoji char
                 if(item.icon.startsWith('<')) {
@@ -1210,6 +1233,8 @@
                     </div>
                 `;
 
+                // CRITICAL FIX: Ensure click event can find global function by name or attach directly
+                // Here we stick to onclick string for simplicity but ensure global scope
                 if (activeObj.type === 'i-text' || activeObj.type === 'text') {
                     subContent = `
                         <div class="sub-item" onclick="document.getElementById('textColorPicker').click()">🎨 ${t('color')}</div>
@@ -1252,6 +1277,35 @@
                 subRow.innerHTML = subContent;
                 subRow.style.display = 'flex';
             }
+        }
+
+        // --- Global Functions needed for HTML onClick ---
+        window.cloneObject = function() {
+            const o = canvas.getActiveObject(); if(!o) return;
+            o.clone((c) => {
+                canvas.discardActiveObject();
+                c.set({
+                    left: o.left + 20, 
+                    top: o.top + 20, 
+                    evented: true,
+                    selectable: true
+                });
+                
+                if (c.type === 'activeSelection') {
+                    // Active selection needs to be re-initialized properly on canvas
+                    c.canvas = canvas;
+                    c.forEachObject(obj => {
+                        canvas.add(obj);
+                    });
+                    c.setCoords();
+                } else {
+                    canvas.add(c);
+                }
+                
+                canvas.setActiveObject(c);
+                canvas.requestRenderAll();
+                saveHistory();
+            });
         }
 
         // --- Shape Adding ---
@@ -1900,28 +1954,9 @@
         function sendBack() { 
             const o = canvas.getActiveObject(); if(o){ o.sendBackwards(); saveHistory(); } 
         }
-        function cloneObject() {
-            const o = canvas.getActiveObject(); if(!o) return;
-            o.clone((c) => {
-                c.set({
-                    left: o.left + 20, 
-                    top: o.top + 20, 
-                    evented: true,
-                    selectable: true
-                });
-                
-                if (c.type === 'activeSelection') {
-                    c.canvas = canvas;
-                    c.forEachObject(o => canvas.add(o));
-                    c.setCoords();
-                } else {
-                    canvas.add(c);
-                }
-                canvas.setActiveObject(c);
-                canvas.requestRenderAll();
-                saveHistory();
-            });
-        }
+        
+        // cloneObject is now global via window.cloneObject to fix scope issues
+
         function makeBgTransparent() { canvas.setBackgroundColor(null, canvas.renderAll.bind(canvas)); saveHistory(); closeModal('transModal'); }
 
         function executeSave(format) {
